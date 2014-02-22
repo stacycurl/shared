@@ -42,6 +42,13 @@ class SharedTests {
     assertEquals("initial >> modified", Shared("initial").modifyAndGet(_ + " >> modified"))
   }
 
+  @Test def modifyAndCalc {
+    assertEquals(List("initial", "initial >> modified"),
+      Shared("initial").modifyAndCalc(_ + " >> modified") {
+        case (initial, modified) => List(initial, modified)
+      })
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

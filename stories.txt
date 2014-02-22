@@ -1,4 +1,5 @@
 Todo
+- reify operations
 - xmap shared (i.e. provide an instance of InvariantFunctor[Shared])
 - pimp Shared[List[A]] to behave a bit like ListBuffer[A]
 - await(predicate: A +> Boolean, timeout: Long)
@@ -8,6 +9,7 @@ Todo
 - rx
 
 Done
++ modifyAndCalc
 + modifyAndGet returns new value
 + modify returns old value
 + modify is thread safe

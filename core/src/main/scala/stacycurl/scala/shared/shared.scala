@@ -19,6 +19,13 @@ object Shared {
       value = f(value)
       value
     }
+
+    def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = synchronized {
+      val current = value
+      val modified = f(value)
+
+      g(current, modified)
+    }
   }
 }
 
@@ -26,4 +33,5 @@ trait Shared[A] {
   def get(): A
   def modify(f: A => A): A
   def modifyAndGet(f: A => A): A
+  def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B
 }
