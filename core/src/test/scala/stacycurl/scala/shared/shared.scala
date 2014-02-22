@@ -89,6 +89,17 @@ class SharedTests {
     assertEquals("initial >> modified", shared.get())
   }
 
+  @Test def canConvertModifyToModifyAndCalc {
+    val shared = Shared("initial")
+    val modify = Modify[String](_ ++ " >> modified")
+
+    assertEquals(List("initial", "initial >> modified"), shared.modify(modify.andCalc {
+      case (initial, modified) => List(initial, modified)
+    }))
+
+    assertEquals("initial >> modified", shared.get())
+  }
+
   @Test def canXmap {
     val string = Shared("initial")
     val reversed = string.xmap[String](_.reverse, _.reverse)
