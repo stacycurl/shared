@@ -7,6 +7,13 @@ import org.junit.Assert._
 
 class SharedTests {
   @Test def canGetInitialValue {
-    assertEquals(1, Shared(1).get())
+    assertEquals("initial", Shared("initial").get())
+  }
+
+  @Test def canModify {
+    val shared = Shared("initial")
+    shared.modify(_ ++ " >> modified")
+
+    assertEquals("initial >> modified", shared.get())
   }
 }
