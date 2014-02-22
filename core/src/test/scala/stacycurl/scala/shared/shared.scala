@@ -42,18 +42,15 @@ class SharedTests {
     assertEquals("initial >> modified", Shared("initial").modifyAndGet(_ + " >> modified"))
   }
 
-  @Test def modifyAndCalcModifies {
-    val shared = Shared("initial")
-    shared.modifyAndCalc(_ ++ " >> modified") { case _ => "ignored" }
-
-    assertEquals("initial >> modified", shared.get())
-  }
-
   @Test def modifyAndCalcPerformsCalculateOnOldAndModifiedValue {
+    val shared = Shared("initial")
+
     assertEquals(List("initial", "initial >> modified"),
-      Shared("initial").modifyAndCalc(_ + " >> modified") {
+      shared.modifyAndCalc(_ + " >> modified") {
         case (initial, modified) => List(initial, modified)
       })
+
+    assertEquals("initial >> modified", shared.get())
   }
 
   @Test def reifiedModifyBehavesTheSameAsNormal {
@@ -68,6 +65,17 @@ class SharedTests {
     val modifyAndGet = ModifyAndGet[String](_ ++ " >> modified")
 
     assertEquals("initial >> modified", Shared("initial").modify(modifyAndGet))
+  }
+
+  @Test def reifiedModifyAndCalcBehavesTheSameAsNormal {
+    val shared = Shared("initial")
+
+    val modifyAndCalc = ModifyAndCalc[String, List[String]](_ ++ " >> modified", {
+      case (initial, modified) => List(initial, modified)
+    })
+
+    assertEquals(List("initial", "initial >> modified"), shared.modify(modifyAndCalc))
+    assertEquals("initial >> modified", shared.get())
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =

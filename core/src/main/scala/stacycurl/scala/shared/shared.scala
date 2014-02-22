@@ -19,7 +19,7 @@ object Shared {
       g(current, value)
     }
 
-    def modify(update: Update[A]): A = {
+    def modify[B](update: Update[A, B]): B = {
       update(this)
     }
   }
@@ -30,17 +30,21 @@ trait Shared[A] {
   def modify(f: A => A): A
   def modifyAndGet(f: A => A): A
   def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B
-  def modify(update: Update[A]): A
+  def modify[B](update: Update[A, B]): B
 }
 
-trait Update[A] {
-  def apply(shared: Shared[A]): A
+trait Update[A, B] {
+  def apply(shared: Shared[A]): B
 }
 
-case class Modify[A](f: A => A) extends Update[A] {
+case class Modify[A](f: A => A) extends Update[A, A] {
   def apply(shared: Shared[A]): A = shared.modify(f)
 }
 
-case class ModifyAndGet[A](f: A => A) extends Update[A] {
+case class ModifyAndGet[A](f: A => A) extends Update[A, A] {
   def apply(shared: Shared[A]): A = shared.modifyAndGet(f)
+}
+
+case class ModifyAndCalc[A, B](f: A => A, g: (A, A) => B) extends Update[A, B] {
+  def apply(shared: Shared[A]): B = shared.modifyAndCalc(f)(g)
 }
