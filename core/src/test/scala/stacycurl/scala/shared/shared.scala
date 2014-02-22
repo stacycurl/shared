@@ -42,7 +42,14 @@ class SharedTests {
     assertEquals("initial >> modified", Shared("initial").modifyAndGet(_ + " >> modified"))
   }
 
-  @Test def modifyAndCalc {
+  @Test def modifyAndCalcModifies {
+    val shared = Shared("initial")
+    shared.modifyAndCalc(_ ++ " >> modified") { case _ => "ignored" }
+
+    assertEquals("initial >> modified", shared.get())
+  }
+
+  @Test def modifyAndCalcPerformsCalculateOnOldAndModifiedValue {
     assertEquals(List("initial", "initial >> modified"),
       Shared("initial").modifyAndCalc(_ + " >> modified") {
         case (initial, modified) => List(initial, modified)

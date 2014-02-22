@@ -22,9 +22,9 @@ object Shared {
 
     def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = synchronized {
       val current = value
-      val modified = f(value)
+      value = f(value)
 
-      g(current, modified)
+      g(current, value)
     }
   }
 }
