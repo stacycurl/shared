@@ -13,10 +13,10 @@ class SharedTests {
     assertEquals("initial", Shared("initial").get())
   }
 
-  @Test def canModify {
+  @Test def modifyReturnsOldValue {
     val shared = Shared("initial")
-    shared.modify(_ ++ " >> modified")
 
+    assertEquals("initial", shared.modify(_ ++ " >> modified"))
     assertEquals("initial >> modified", shared.get())
   }
 
@@ -36,12 +36,11 @@ class SharedTests {
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
   }
 
-  @Test def modifyReturnsOldValue {
-    assertEquals("old", Shared("old").modify(_ => "new"))
-  }
+  @Test def canModifyAndGet {
+    val shared = Shared("initial")
 
-  @Test def modifyAndGetReturnsNewValue {
-    assertEquals("initial >> modified", Shared("initial").modifyAndGet(_ + " >> modified"))
+    assertEquals("initial >> modified", shared.modifyAndGet(_ ++ " >> modified"))
+    assertEquals("initial >> modified", shared.get())
   }
 
   @Test def modifyAndCalcPerformsCalculateOnOldAndModifiedValue {
@@ -56,17 +55,19 @@ class SharedTests {
   }
 
   @Test def reifiedModifyBehavesTheSameAsNormal {
-    val modify = Modify[String](_ ++ " >> modified")
     val shared = Shared("initial")
+    val modify = Modify[String](_ ++ " >> modified")
 
     assertEquals("initial", shared.modify(modify))
     assertEquals("initial >> modified", shared.get())
   }
 
   @Test def reifiedModifyAndGetBehavesTheSameAsNormal {
+    val shared = Shared("initial")
     val modifyAndGet = ModifyAndGet[String](_ ++ " >> modified")
 
-    assertEquals("initial >> modified", Shared("initial").modify(modifyAndGet))
+    assertEquals("initial >> modified", shared.modify(modifyAndGet))
+    assertEquals("initial >> modified", shared.get())
   }
 
   @Test def reifiedModifyAndCalcBehavesTheSameAsNormal {
