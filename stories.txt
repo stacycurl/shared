@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add sorted for CC[_] <: Seq[_]
 + add sorted to SharedList
 + pimp Shared[List[A]] to behave a bit like ListBuffer[A]
 + lens

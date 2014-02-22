@@ -1,5 +1,6 @@
 package stacycurl.scala.shared
 
+import scala.collection._
 import scalaz._
 
 
@@ -19,9 +20,11 @@ object Shared {
     def clear() {
       list.modify(_ => Nil)
     }
+  }
 
-    def sorted(implicit ordering: scala.Ordering[A]): Shared[List[A]] =
-      list.xmap[List[A]](_.sorted, identity[List[A]])
+  implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
+    def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
+      seqLike.xmap[CC[A]](_.sorted[B](ordering), identity[CC[A]])
   }
 }
 

@@ -1,6 +1,7 @@
 package stacycurl.scala.shared
 
 import org.junit.Test
+import scala.collection.immutable.Stack
 import scala.util.Random
 
 import org.junit.Assert._
@@ -118,11 +119,12 @@ class SharedTests {
     assertEquals(Nil, list.get())
   }
 
-  @Test def canGetSortedViewOfList {
-    val list   = Shared(List(1, 3, 2))
-    val sorted = list.sorted
+  @Test def canGetSortedViewOfAnySeqLike {
+    val list  = Shared(List(1, 3, 2))
+    val stack = Shared(Stack(1, 3, 2))
 
-    assertEquals(List(1, 2, 3), sorted.get())
+    assertEquals(list.get().sorted,  list.sorted.get())
+    assertEquals(stack.get().sorted, stack.sorted.get())
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
