@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add Update[A, B].lens(C](lens: Lens[C, A]): Update[C, B]
 + add Update[A, B].xmap[C](aToC: A => C, cToA: C => A): Update[C, B]
 + add Update[A, B].mao[C](f: B => C): Update[A, C]
 + add map to Reader[A]

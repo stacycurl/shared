@@ -92,8 +92,8 @@ class SharedTests {
 
   @Test def canCreateLens {
     val tuple  = Shared(("one", 1))
-    val string = tuple.lens(Lens.firstLens[String, Int])
-    val int    = tuple.lens(Lens.secondLens[String, Int])
+    val string = tuple.lens(first)
+    val int    = tuple.lens(second)
 
     assertEquals("one", string.get())
     assertEquals(1,     int.get())
@@ -172,10 +172,20 @@ class SharedTests {
       Shared(List(0, 1)).modify(appendTwo.xmap[List[Int]](_.reverse, _.reverse)))
   }
 
+  @Test def anUpdateCanBeAppliedToAPartOfAnotherShared {
+    val addOne = ModifyAndGet[Int](_ + 1)
+
+    assertEquals(Shared("one", 1).lens(second).modify(addOne),
+      Shared("one", 1).modify(addOne.lens(second)))
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 
   private def thread[Discard](f: => Discard): Thread = new Thread {
     override def run() = f
   }
+
+  private val first  = Lens.firstLens[String, Int]
+  private val second = Lens.secondLens[String, Int]
 }

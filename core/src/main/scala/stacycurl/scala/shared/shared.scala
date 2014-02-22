@@ -121,6 +121,7 @@ trait Update[A, B] {
   def apply(shared: Shared[A]): B
   def map[C](f: B => C): Update[A, C] = MappedUpdate[A, B, C](this, f)
   def xmap[C](aToC: A => C, cToA: C => A): Update[C, B] = XMappedUpdate[A, B, C](this, aToC, cToA)
+  def lens[C](lens: Lens[C, A]): Update[C, B] = LensUpdate[A, B, C](this, lens)
 }
 
 case class Modify[A](f: A => A) extends Update[A, A] {
@@ -141,4 +142,8 @@ case class MappedUpdate[A, B, C](abu: Update[A, B], f: B => C) extends Update[A,
 
 case class XMappedUpdate[A, B, C](abu: Update[A, B], aToC: A => C, cToA: C => A) extends Update [C, B] {
   def apply(shared: Shared[C]): B = abu.apply(shared.xmap[A](cToA, aToC))
+}
+
+case class LensUpdate[A, B, C](abu: Update[A, B], lens: Lens[C, A]) extends Update[C, B] {
+  def apply(shared: Shared[C]): B = abu.apply(shared.lens(lens))
 }
