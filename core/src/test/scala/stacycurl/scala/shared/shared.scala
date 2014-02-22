@@ -151,6 +151,10 @@ class SharedTests {
     assertEquals(stack.get().padTo(5, 0), stack.transform(_.padTo(5, 0)).get())
   }
 
+  @Test def canGetReadOnlyView {
+    assertEquals("value", Shared("value").reader.get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

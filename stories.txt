@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add reader
 + add transform
 + add sortWith
 + add sortBy
