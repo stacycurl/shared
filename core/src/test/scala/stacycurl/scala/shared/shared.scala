@@ -78,6 +78,16 @@ class SharedTests {
     assertEquals("initial >> modified", shared.get())
   }
 
+  @Test def canXmap {
+    val string = Shared("initial")
+    val reversed = string.xmap[String](_.reverse, _.reverse)
+
+    assertEquals(string.get().reverse, reversed.get())
+
+    reversed.modify("deifidom >> " + _)
+    assertEquals("initial >> modified", string.get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

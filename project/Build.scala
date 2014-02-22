@@ -41,7 +41,8 @@ object SharedBuild extends Build {
         libraryDependencies <++= scalaVersion { sv =>
           Seq(
             "org.scala-lang" % "scala-compiler" % sv,
-            "com.novocode" % "junit-interface" % "0.7" % "test"
+            "com.novocode" % "junit-interface" % "0.7" % "test",
+            "org.scalaz" % "scalaz-core_2.10" % "7.1.0-SNAPSHOT"
         )},
 
         initialCommands in console := """import stacycurl.scala.shared._""",
