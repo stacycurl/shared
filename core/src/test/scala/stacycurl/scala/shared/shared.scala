@@ -127,12 +127,20 @@ class SharedTests {
     assertEquals(stack.get().sorted, stack.sorted.get())
   }
 
-  @Test def canCanSortByViewOfAnySeq {
+  @Test def canGetSortByViewOfAnySeq {
     val list  = Shared(List("aa", "bbb", "c"))
     val stack = Shared(Stack("aa", "bbb", "c"))
 
     assertEquals(list.get().sortBy(_.length),  list.sortBy(_.length).get())
     assertEquals(stack.get().sortBy(_.length), stack.sortBy(_.length).get())
+  }
+
+  @Test def canGetSortWithViewOfAnySeq {
+    val list  = Shared(List(1, 3, 2))
+    val stack = Shared(Stack(1, 3, 2))
+
+    assertEquals(list.get().sortWith(_ > _),  list.sortWith(_ > _).get())
+    assertEquals(stack.get().sortWith(_ > _), stack.sortWith(_ > _).get())
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =

@@ -26,6 +26,9 @@ object Shared {
     def sortBy[B](f: A => B)(implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
       seqLike.xmap[CC[A]](_.sortBy(f)(ordering), identity[CC[A]])
 
+    def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] =
+      seqLike.xmap[CC[A]](_.sortWith(lt), identity[CC[A]])
+
     def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
       seqLike.xmap[CC[A]](_.sorted[B](ordering), identity[CC[A]])
   }

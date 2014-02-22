@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add sortWith
 + add sortBy
 + add sorted for CC[_] <: Seq[_]
 + add sorted to SharedList
