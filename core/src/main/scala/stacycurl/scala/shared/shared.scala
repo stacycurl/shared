@@ -126,6 +126,7 @@ trait Update[A, B] {
 
 case class Modify[A](f: A => A) extends Update[A, A] {
   def apply(shared: Shared[A]): A = shared.modify(f)
+  def andGet = ModifyAndGet[A](f)
 }
 
 case class ModifyAndGet[A](f: A => A) extends Update[A, A] {

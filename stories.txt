@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add Modify[A].andGet: ModifyAndGet[A]
 + add Update[A, B].lens(C](lens: Lens[C, A]): Update[C, B]
 + add Update[A, B].xmap[C](aToC: A => C, cToA: C => A): Update[C, B]
 + add Update[A, B].mao[C](f: B => C): Update[A, C]
