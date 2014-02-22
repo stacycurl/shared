@@ -4,12 +4,22 @@ import scalaz._
 
 
 object Shared {
+  def apply[A](initial: A): Shared[A] = SyncShared[A](initial)
+
   implicit object SharedInvariantFunctor extends InvariantFunctor[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] =
       sa.xmap(aToB, bToA)
   }
 
-  def apply[A](initial: A): Shared[A] = SyncShared[A](initial)
+  implicit class SharedList[A](list: Shared[List[A]]) {
+    def +=(a: A) {
+      list.modify(_ ++ List(a))
+    }
+
+    def clear() {
+      list.modify(_ => Nil)
+    }
+  }
 }
 
 trait Shared[A] {

@@ -106,6 +106,18 @@ class SharedTests {
     assertEquals(("one >> two", 2), tuple.get())
   }
 
+  @Test def sharedListBehavesLikeListBuffer {
+    val list = Shared(List("initial"))
+
+    list += "new"
+
+    assertEquals(List("initial", "new"), list.get())
+
+    list.clear()
+
+    assertEquals(Nil, list.get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 
