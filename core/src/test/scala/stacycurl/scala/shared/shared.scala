@@ -118,6 +118,13 @@ class SharedTests {
     assertEquals(Nil, list.get())
   }
 
+  @Test def canGetSortedViewOfList {
+    val list   = Shared(List(1, 3, 2))
+    val sorted = list.sorted
+
+    assertEquals(List(1, 2, 3), sorted.get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

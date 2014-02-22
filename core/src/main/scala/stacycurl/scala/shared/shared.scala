@@ -19,6 +19,9 @@ object Shared {
     def clear() {
       list.modify(_ => Nil)
     }
+
+    def sorted(implicit ordering: scala.Ordering[A]): Shared[List[A]] =
+      list.xmap[List[A]](_.sorted, identity[List[A]])
   }
 }
 
