@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add map to Reader[A]
 + add reader
 + add transform
 + add sortWith

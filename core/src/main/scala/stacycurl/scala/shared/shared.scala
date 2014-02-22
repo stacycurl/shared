@@ -63,7 +63,6 @@ case class SyncShared[A](initial: A) extends Shared[A] {
 
     g(current, value)
   }
-
 }
 
 case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
@@ -86,12 +85,23 @@ case class LensShared[A, B](sa: Shared[A], lens: Lens[A, B]) extends Shared[B] {
   }
 }
 
+object Reader {
+  implicit object ReaderFunctor extends Functor[Reader] {
+    def map[A, B](ra: Reader[A])(f: A => B): Reader[B] = ra.map(f)
+  }
+}
+
 trait Reader[+A] {
   def get(): A
+  def map[B](f: A => B): Reader[B] = MappedReader(this, f)
 }
 
 case class SharedReader[A](sa: Shared[A]) extends Reader[A] {
   def get(): A = sa.get()
+}
+
+case class MappedReader[A, B](ra: Reader[A], f: A => B) extends Reader[B] {
+  def get(): B = f(ra.get())
 }
 
 trait Update[A, B] {

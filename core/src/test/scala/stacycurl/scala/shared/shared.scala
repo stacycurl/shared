@@ -155,6 +155,10 @@ class SharedTests {
     assertEquals("value", Shared("value").reader.get())
   }
 
+  @Test def canMapOverReader {
+    assertEquals("321", Shared("123").reader.map(_.reverse).get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 
