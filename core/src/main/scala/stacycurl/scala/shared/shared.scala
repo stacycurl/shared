@@ -104,8 +104,16 @@ case class MappedReader[A, B](ra: Reader[A], f: A => B) extends Reader[B] {
   def get(): B = f(ra.get())
 }
 
+object Update {
+  implicit def updateFunctor[A]: Functor[({type b[B] = Update[A, B]})#b] = 
+    new Functor[({type b[B] = Update[A, B]})#b] {
+      def map[B, C](abu: Update[A, B])(f: B => C): Update[A, C] = abu.map(f)
+    }
+}
+
 trait Update[A, B] {
   def apply(shared: Shared[A]): B
+  def map[C](f: B => C): Update[A, C] = MappedUpdate[A, B, C](this, f)
 }
 
 case class Modify[A](f: A => A) extends Update[A, A] {
@@ -118,4 +126,8 @@ case class ModifyAndGet[A](f: A => A) extends Update[A, A] {
 
 case class ModifyAndCalc[A, B](f: A => A, g: (A, A) => B) extends Update[A, B] {
   def apply(shared: Shared[A]): B = shared.modifyAndCalc(f)(g)
+}
+
+case class MappedUpdate[A, B, C](abu: Update[A, B], f: B => C) extends Update[A, C] {
+  def apply(shared: Shared[A]): C = f(abu.apply(shared))
 }

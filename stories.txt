@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add Update[A, B].mao[C](f: B => C): Update[A, C]
 + add map to Reader[A]
 + add reader
 + add transform

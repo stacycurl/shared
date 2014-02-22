@@ -159,6 +159,12 @@ class SharedTests {
     assertEquals("321", Shared("123").reader.map(_.reverse).get())
   }
 
+  @Test def canMapOverUpdate {
+    val modifyAndGet = ModifyAndGet[Int](_ + 1)
+
+    assertEquals(Shared(1).modify(modifyAndGet) * 10, Shared(1).modify(modifyAndGet.map(_ * 10)))
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 
