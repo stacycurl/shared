@@ -7,18 +7,9 @@ object Shared {
 
     def get(): A = value
 
-    def modify(f: A => A): A = synchronized {
-      val current = value
+    def modify(f: A => A): A = modifyAndCalc(f) { case (old, _) => old }
 
-      value = f(value)
-
-      current
-    }
-
-    def modifyAndGet(f: A => A): A = synchronized {
-      value = f(value)
-      value
-    }
+    def modifyAndGet(f: A => A): A = modifyAndCalc(f) { case (_, modified) => modified }
 
     def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = synchronized {
       val current = value
