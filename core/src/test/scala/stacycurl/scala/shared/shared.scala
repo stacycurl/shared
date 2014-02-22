@@ -143,6 +143,14 @@ class SharedTests {
     assertEquals(stack.get().sortWith(_ > _), stack.sortWith(_ > _).get())
   }
 
+  @Test def canGetTransformedViewOfAnySeq {
+    val list  = Shared(List(1, 3, 2))
+    val stack = Shared(Stack(1, 3, 2))
+
+    assertEquals(list.get().padTo(5, 0),  list.transform(_.padTo(5, 0)).get())
+    assertEquals(stack.get().padTo(5, 0), stack.transform(_.padTo(5, 0)).get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

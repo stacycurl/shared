@@ -24,13 +24,13 @@ object Shared {
 
   implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
     def sortBy[B](f: A => B)(implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
-      seqLike.xmap[CC[A]](_.sortBy(f)(ordering), identity[CC[A]])
+      seqLike.transform(_.sortBy(f))
 
     def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] =
-      seqLike.xmap[CC[A]](_.sortWith(lt), identity[CC[A]])
+      seqLike.transform(_.sortWith(lt))
 
     def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
-      seqLike.xmap[CC[A]](_.sorted[B](ordering), identity[CC[A]])
+      seqLike.transform(_.sorted[B])
   }
 }
 
@@ -40,6 +40,7 @@ trait Shared[A] {
 
   def modify(f: A => A): A       = modifyAndCalc(f) { case (old, _) => old }
   def modifyAndGet(f: A => A): A = modifyAndCalc(f) { case (_, modified) => modified }
+  def transform(f: A => A): Shared[A] = xmap[A](f, identity[A])
 
   def modify[B](update: Update[A, B]): B = update(this)
 

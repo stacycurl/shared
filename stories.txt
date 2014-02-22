@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ add transform
 + add sortWith
 + add sortBy
 + add sorted for CC[_] <: Seq[_]
