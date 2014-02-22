@@ -14,10 +14,16 @@ object Shared {
 
       current
     }
+
+    def modifyAndGet(f: A => A): A = synchronized {
+      value = f(value)
+      value
+    }
   }
 }
 
 trait Shared[A] {
   def get(): A
   def modify(f: A => A): A
+  def modifyAndGet(f: A => A): A
 }
