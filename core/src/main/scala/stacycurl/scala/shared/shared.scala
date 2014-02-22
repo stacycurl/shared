@@ -109,11 +109,18 @@ object Update {
     new Functor[({type b[B] = Update[A, B]})#b] {
       def map[B, C](abu: Update[A, B])(f: B => C): Update[A, C] = abu.map(f)
     }
+
+  implicit def updateInvariantFunctor[B]: InvariantFunctor[({type a[A] = Update[A, B]})#a] =
+    new InvariantFunctor[({type a[A] = Update[A, B]})#a] {
+      def xmap[A, C](abu: Update[A, B], aToC: A => C, cToA: C => A): Update[C, B] =
+        abu.xmap[C](aToC, cToA)
+    }
 }
 
 trait Update[A, B] {
   def apply(shared: Shared[A]): B
   def map[C](f: B => C): Update[A, C] = MappedUpdate[A, B, C](this, f)
+  def xmap[C](aToC: A => C, cToA: C => A): Update[C, B] = XMappedUpdate[A, B, C](this, aToC, cToA)
 }
 
 case class Modify[A](f: A => A) extends Update[A, A] {
@@ -130,4 +137,8 @@ case class ModifyAndCalc[A, B](f: A => A, g: (A, A) => B) extends Update[A, B] {
 
 case class MappedUpdate[A, B, C](abu: Update[A, B], f: B => C) extends Update[A, C] {
   def apply(shared: Shared[A]): C = f(abu.apply(shared))
+}
+
+case class XMappedUpdate[A, B, C](abu: Update[A, B], aToC: A => C, cToA: C => A) extends Update [C, B] {
+  def apply(shared: Shared[C]): B = abu.apply(shared.xmap[A](cToA, aToC))
 }

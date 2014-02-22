@@ -165,6 +165,13 @@ class SharedTests {
     assertEquals(Shared(1).modify(modifyAndGet) * 10, Shared(1).modify(modifyAndGet.map(_ * 10)))
   }
 
+  @Test def canXMapOverUpdate {
+    val appendTwo = Modify[List[Int]](_ ++ List(2))
+
+    assertEquals(Shared(List(0, 1)).xmap[List[Int]](_.reverse, _.reverse).modify(appendTwo),
+      Shared(List(0, 1)).modify(appendTwo.xmap[List[Int]](_.reverse, _.reverse)))
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 
