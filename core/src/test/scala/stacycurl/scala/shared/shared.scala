@@ -56,13 +56,18 @@ class SharedTests {
       })
   }
 
-  @Test def reifiedModifyBehavesTheSameAsUnreifiedModify {
+  @Test def reifiedModifyBehavesTheSameAsNormal {
     val modify = Modify[String](_ ++ " >> modified")
-
     val shared = Shared("initial")
-    shared.modify(modify)
 
+    assertEquals("initial", shared.modify(modify))
     assertEquals("initial >> modified", shared.get())
+  }
+
+  @Test def reifiedModifyAndGetBehavesTheSameAsNormal {
+    val modifyAndGet = ModifyAndGet[String](_ ++ " >> modified")
+
+    assertEquals("initial >> modified", Shared("initial").modify(modifyAndGet))
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
