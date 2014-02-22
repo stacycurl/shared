@@ -21,6 +21,8 @@ trait Shared[A] {
 
   def modify[B](update: Update[A, B]): B = update(this)
 
+  def lens[B](lens: Lens[A, B]): Shared[B] = LensShared[A, B](this, lens)
+
   def xmap[B](aToB: A => B, bToA: B => A): Shared[B] =
     XMapShared[A, B](this, aToB, bToA)
 }
@@ -40,14 +42,22 @@ case class SyncShared[A](initial: A) extends Shared[A] {
 
 }
 
-case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A)
-  extends Shared[B] {
-
+case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
   def get(): B = aToB(sa.get())
 
   def modifyAndCalc[C](f: B => B)(g: (B, B) => C): C = {
     sa.modifyAndCalc(aToB andThen f andThen bToA) {
       case (oldA, newA) => g(aToB(oldA), aToB(newA))
+    }
+  }
+}
+
+case class LensShared[A, B](sa: Shared[A], lens: Lens[A, B]) extends Shared[B] {
+  def get(): B = lens.get(sa.get())
+
+  def modifyAndCalc[C](f: B => B)(g: (B, B) => C): C = {
+    sa.modifyAndCalc[C](lens.mod(f, _)) {
+      case (oldA, newA) => g(lens.get(oldA), lens.get(newA))
     }
   }
 }

@@ -4,6 +4,7 @@ import org.junit.Test
 import scala.util.Random
 
 import org.junit.Assert._
+import scalaz._
 
 
 class SharedTests {
@@ -86,6 +87,23 @@ class SharedTests {
 
     reversed.modify("deifidom >> " + _)
     assertEquals("initial >> modified", string.get())
+  }
+
+  @Test def canCreateLens {
+    val tuple  = Shared(("one", 1))
+    val string = tuple.lens(Lens.firstLens[String, Int])
+    val int    = tuple.lens(Lens.secondLens[String, Int])
+
+    assertEquals("one", string.get())
+    assertEquals(1,     int.get())
+
+    assertEquals("one", string.modify(_ ++ " >> two"))
+    assertEquals(1,     int.modify(_ + 1))
+
+    assertEquals("one >> two", string.get())
+    assertEquals(2,            int.get())
+
+    assertEquals(("one >> two", 2), tuple.get())
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =

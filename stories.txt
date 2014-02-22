@@ -1,12 +1,12 @@
 Todo
 - pimp Shared[List[A]] to behave a bit like ListBuffer[A]
 - await(predicate: A +> Boolean, timeout: Long)
-- lens
 - change history
 - stream
 - rx
 
 Done
++ lens
 + xmap shared (i.e. provide an instance of InvariantFunctor[Shared])
 + reify modifyAndCalc
 + reify modifyAndGet
