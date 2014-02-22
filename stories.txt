@@ -1,5 +1,4 @@
 Todo
-- modify returns old value
 - modifyAndGet returns new value
 - xmap shared (i.e. provide an instance of InvariantFunctor[Shared])
 - pimp Shared[List[A]] to behave a bit like ListBuffer[A]
@@ -10,6 +9,7 @@ Todo
 - rx
 
 Done
++ modify returns old value
 + modify is thread safe
 + Can modify value
 + Can get initial value

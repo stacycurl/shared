@@ -7,13 +7,17 @@ object Shared {
 
     def get(): A = value
 
-    def modify(f: A => A) = synchronized {
+    def modify(f: A => A): A = synchronized {
+      val current = value
+
       value = f(value)
+
+      current
     }
   }
 }
 
 trait Shared[A] {
   def get(): A
-  def modify(f: A => A)
+  def modify(f: A => A): A
 }
