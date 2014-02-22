@@ -7,7 +7,7 @@ object Shared {
 
     def get(): A = value
 
-    def modify(f: A => A) {
+    def modify(f: A => A) = synchronized {
       value = f(value)
     }
   }
