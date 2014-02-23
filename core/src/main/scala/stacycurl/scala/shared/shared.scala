@@ -13,13 +13,8 @@ object Shared {
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) {
-    def +=(a: A) {
-      list.modify(_ ++ List(a))
-    }
-
-    def clear() {
-      list.modify(_ => Nil)
-    }
+    def +=(a: A) = list.modify(_ ++ List(a))
+    def clear()  = list.modify(_ => Nil)
   }
 
   implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
@@ -38,17 +33,14 @@ trait Shared[A] {
   def get(): A
   def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B
 
-  def modify(f: A => A): A       = modifyAndCalc(f) { case (old, _) => old }
-  def modifyAndGet(f: A => A): A = modifyAndCalc(f) { case (_, modified) => modified }
-  def reader: Reader[A] = SharedReader[A](this)
-  def transform(f: A => A): Shared[A] = xmap[A](f, identity[A])
-
+  def modify(f: A => A): A               = modifyAndCalc(f) { case (old, _)      => old      }
+  def modifyAndGet(f: A => A): A         = modifyAndCalc(f) { case (_, modified) => modified }
   def modify[B](update: Update[A, B]): B = update(this)
+  def reader: Reader[A]                  = SharedReader[A](this)
 
-  def lens[B](lens: Lens[A, B]): Shared[B] = LensShared[A, B](this, lens)
-
-  def xmap[B](aToB: A => B, bToA: B => A): Shared[B] =
-    XMapShared[A, B](this, aToB, bToA)
+  def lens[B](lens: Lens[A, B]): Shared[B]           = LensShared[A, B](this, lens)
+  def transform(f: A => A): Shared[A]                = xmap[A](f, identity[A])
+  def xmap[B](aToB: A => B, bToA: B => A): Shared[B] = XMapShared[A, B](this, aToB, bToA)
 }
 
 case class SyncShared[A](initial: A) extends Shared[A] {
@@ -58,10 +50,10 @@ case class SyncShared[A](initial: A) extends Shared[A] {
   def get(): A = value
 
   def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = synchronized {
-    val current = value
+    val oldA = value
     value = f(value)
 
-    g(current, value)
+    g(oldA, value)
   }
 }
 
@@ -100,7 +92,7 @@ case class SharedReader[A](sa: Shared[A]) extends Reader[A] {
   def get(): A = sa.get()
 }
 
-case class MappedReader[A, B](ra: Reader[A], f: A => B) extends Reader[B] {
+case class MappedReader[A, +B](ra: Reader[A], f: A => B) extends Reader[B] {
   def get(): B = f(ra.get())
 }
 
@@ -117,7 +109,7 @@ object Update {
     }
 }
 
-trait Update[A, B] {
+trait Update[A, +B] {
   def apply(shared: Shared[A]): B
   def map[C](f: B => C): Update[A, C] = MappedUpdate[A, B, C](this, f)
   def xmap[C](aToC: A => C, cToA: C => A): Update[C, B] = XMappedUpdate[A, B, C](this, aToC, cToA)
@@ -134,18 +126,18 @@ case class ModifyAndGet[A](f: A => A) extends Update[A, A] {
   def apply(shared: Shared[A]): A = shared.modifyAndGet(f)
 }
 
-case class ModifyAndCalc[A, B](f: A => A, g: (A, A) => B) extends Update[A, B] {
+case class ModifyAndCalc[A, +B](f: A => A, g: (A, A) => B) extends Update[A, B] {
   def apply(shared: Shared[A]): B = shared.modifyAndCalc(f)(g)
 }
 
-case class MappedUpdate[A, B, C](abu: Update[A, B], f: B => C) extends Update[A, C] {
+case class MappedUpdate[A, B, +C](abu: Update[A, B], f: B => C) extends Update[A, C] {
   def apply(shared: Shared[A]): C = f(abu.apply(shared))
 }
 
-case class XMappedUpdate[A, B, C](abu: Update[A, B], aToC: A => C, cToA: C => A) extends Update [C, B] {
+case class XMappedUpdate[A, +B, C](abu: Update[A, B], aToC: A => C, cToA: C => A) extends Update [C, B] {
   def apply(shared: Shared[C]): B = abu.apply(shared.xmap[A](cToA, aToC))
 }
 
-case class LensUpdate[A, B, C](abu: Update[A, B], lens: Lens[C, A]) extends Update[C, B] {
+case class LensUpdate[A, +B, C](abu: Update[A, B], lens: Lens[C, A]) extends Update[C, B] {
   def apply(shared: Shared[C]): B = abu.apply(shared.lens(lens))
 }
