@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ Replace modifyAndGet & modifyAndCalc by returning Change from modify
 + generalise locking
 + add Modify[A].andCalc[B]
 + add Modify[A].andGet: ModifyAndGet[A]

@@ -13,11 +13,9 @@ class SharedTests {
     assertEquals("initial", Shared("initial").get())
   }
 
-  @Test def modifyReturnsOldValue {
-    val shared = Shared("initial")
-
-    assertEquals("initial", shared.modify(_ ++ " >> modified"))
-    assertEquals("initial >> modified", shared.get())
+  @Test def modifyReturnsChange {
+    assertEquals(Change("initial", "initial >> modified"),
+      Shared("initial").modify(_ ++ " >> modified"))
   }
 
   @Test def modifyIsThreadSafe {
@@ -36,77 +34,18 @@ class SharedTests {
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
   }
 
-  @Test def canModifyAndGet {
-    val shared = Shared("initial")
-
-    assertEquals("initial >> modified", shared.modifyAndGet(_ ++ " >> modified"))
-    assertEquals("initial >> modified", shared.get())
-  }
-
-  @Test def modifyAndCalcPerformsCalculateOnOldAndModifiedValue {
-    val shared = Shared("initial")
-
-    assertEquals(List("initial", "initial >> modified"),
-      shared.modifyAndCalc(_ + " >> modified") {
-        case (initial, modified) => List(initial, modified)
-      })
-
-    assertEquals("initial >> modified", shared.get())
-  }
-
   @Test def reifiedModifyBehavesTheSameAsNormal {
-    val shared = Shared("initial")
-    val modify = Modify[String](_ ++ " >> modified")
-
-    assertEquals("initial", shared.modify(modify))
-    assertEquals("initial >> modified", shared.get())
-  }
-
-  @Test def reifiedModifyAndGetBehavesTheSameAsNormal {
-    val shared = Shared("initial")
-    val modifyAndGet = ModifyAndGet[String](_ ++ " >> modified")
-
-    assertEquals("initial >> modified", shared.modify(modifyAndGet))
-    assertEquals("initial >> modified", shared.get())
-  }
-
-  @Test def reifiedModifyAndCalcBehavesTheSameAsNormal {
-    val shared = Shared("initial")
-
-    val modifyAndCalc = ModifyAndCalc[String, List[String]](_ ++ " >> modified", {
-      case (initial, modified) => List(initial, modified)
-    })
-
-    assertEquals(List("initial", "initial >> modified"), shared.modify(modifyAndCalc))
-    assertEquals("initial >> modified", shared.get())
-  }
-
-  @Test def canConvertModifyToModifyAndGet {
-    val shared = Shared("initial")
-    val modify = Modify[String](_ ++ " >> modified")
-
-    assertEquals("initial >> modified", shared.modify(modify.andGet))
-    assertEquals("initial >> modified", shared.get())
-  }
-
-  @Test def canConvertModifyToModifyAndCalc {
-    val shared = Shared("initial")
-    val modify = Modify[String](_ ++ " >> modified")
-
-    assertEquals(List("initial", "initial >> modified"), shared.modify(modify.andCalc {
-      case (initial, modified) => List(initial, modified)
-    }))
-
-    assertEquals("initial >> modified", shared.get())
+    assertEquals(Change("initial", "initial >> modified"),
+      Shared("initial").modify(Modify[String](_ ++ " >> modified")))
   }
 
   @Test def canXmap {
-    val string = Shared("initial")
+    val string   = Shared("initial")
     val reversed = string.xmap[String](_.reverse, _.reverse)
 
     assertEquals(string.get().reverse, reversed.get())
 
-    reversed.modify("deifidom >> " + _)
+    assertEquals(Change("laitini", "deifidom >> laitini"), reversed.modify("deifidom >> " + _))
     assertEquals("initial >> modified", string.get())
   }
 
@@ -118,8 +57,8 @@ class SharedTests {
     assertEquals("one", string.get())
     assertEquals(1,     int.get())
 
-    assertEquals("one", string.modify(_ ++ " >> two"))
-    assertEquals(1,     int.modify(_ + 1))
+    assertEquals(Change("one", "one >> two"), string.modify(_ ++ " >> two"))
+    assertEquals(Change(1, 2),                int.modify(_ + 1))
 
     assertEquals("one >> two", string.get())
     assertEquals(2,            int.get())
@@ -175,24 +114,16 @@ class SharedTests {
     assertEquals("321", Shared("123").map(_.reverse).get())
   }
 
-  @Test def canMapOverUpdate {
-    val modifyAndGet = ModifyAndGet[Int](_ + 1)
+  @Test def canXMapOverModify {
+    val addOne: Modify[Int]     = Modify[Int](_ + 1)
+    val addOneS: Modify[String] = addOne.xmap[String](_.toString, _.toInt)
 
-    assertEquals(Shared(1).modify(modifyAndGet) * 10, Shared(1).modify(modifyAndGet.map(_ * 10)))
+    assertEquals(Change("1", "2"), Shared("1").modify(addOneS))
   }
 
-  @Test def canXMapOverUpdate {
-    val appendTwo = Modify[List[Int]](_ ++ List(2))
-
-    assertEquals(Shared(List(0, 1)).xmap[List[Int]](_.reverse, _.reverse).modify(appendTwo),
-      Shared(List(0, 1)).modify(appendTwo.xmap[List[Int]](_.reverse, _.reverse)))
-  }
-
-  @Test def anUpdateCanBeAppliedToAPartOfAnotherShared {
-    val addOne = ModifyAndGet[Int](_ + 1)
-
-    assertEquals(Shared(("one", 1)).lens(second).modify(addOne),
-      Shared(("one", 1)).modify(addOne.lens(second)))
+  @Test def modifyCanBeAppliedToAPartOfAnotherShared {
+    assertEquals(Change(("one", 1), ("one", 2)),
+      Shared(("one", 1)).modify(Modify[Int](_ + 1).lens(second)))
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
@@ -204,4 +135,14 @@ class SharedTests {
 
   private val first  = Lens.firstLens[String, Int]
   private val second = Lens.secondLens[String, Int]
+}
+
+class ChangeTests {
+  @Test def calcPerformsCalculateOnOldAndModifiedValue {
+    assertEquals(List("initial", "initial >> modified"),
+      Change("initial", "initial >> modified").calc {
+        case (initial, modified) => List(initial, modified)
+      }
+    )
+  }
 }
