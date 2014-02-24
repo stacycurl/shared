@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ generalise locking
 + add Modify[A].andCalc[B]
 + add Modify[A].andGet: ModifyAndGet[A]
 + add Update[A, B].lens(C](lens: Lens[C, A]): Update[C, B]

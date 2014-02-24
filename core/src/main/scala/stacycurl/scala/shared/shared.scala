@@ -1,11 +1,12 @@
 package stacycurl.scala.shared
 
+import java.util.concurrent.locks.{ Lock => JLock, ReadWriteLock => JRWLock, ReentrantReadWriteLock => JRRWLock }
 import scala.collection._
 import scalaz._
 
 
 object Shared {
-  def apply[A](initial: A): Shared[A] = SyncShared[A](initial)
+  def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
 
   implicit object SharedInvariantFunctor extends InvariantFunctor[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] =
@@ -43,13 +44,12 @@ trait Shared[A] {
   def xmap[B](aToB: A => B, bToA: B => A): Shared[B] = XMapShared[A, B](this, aToB, bToA)
 }
 
-case class SyncShared[A](initial: A) extends Shared[A] {
+case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   private var value = initial
 
-  // Strange I haven't needed to add synchronized here
-  def get(): A = value
+  def get(): A = lock.withRead(value)
 
-  def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = synchronized {
+  def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = lock.withWrite {
     val oldA = value
     value = f(value)
 
@@ -74,6 +74,28 @@ case class LensShared[A, B](sa: Shared[A], lens: Lens[A, B]) extends Shared[B] {
     sa.modifyAndCalc[C](lens.mod(f, _)) {
       case (oldA, newA) => g(lens.get(oldA), lens.get(newA))
     }
+  }
+}
+
+trait Lock {
+  def withRead[A](f: => A): A
+  def withWrite[A](f: => A): A
+}
+
+case class Synchronized(monitor: AnyRef = new Object) extends Lock {
+  def withRead[A](f: => A): A  = monitor.synchronized(f)
+  def withWrite[A](f: => A): A = monitor.synchronized(f)
+}
+
+case class ReadWriteLock(lock: JRWLock = new JRRWLock()) extends Lock {
+  def withRead[A](f: => A): A   = withLock(lock.readLock(), f)
+  def withWrite[A](f: => A): A  = withLock(lock.writeLock(), f)
+
+  private def withLock[A](lock: JLock, f: => A): A = try {
+    lock.lock(); f
+  }
+  finally {
+    lock.unlock()
   }
 }
 

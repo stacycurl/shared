@@ -195,8 +195,8 @@ class SharedTests {
   @Test def anUpdateCanBeAppliedToAPartOfAnotherShared {
     val addOne = ModifyAndGet[Int](_ + 1)
 
-    assertEquals(Shared("one", 1).lens(second).modify(addOne),
-      Shared("one", 1).modify(addOne.lens(second)))
+    assertEquals(Shared(("one", 1)).lens(second).modify(addOne),
+      Shared(("one", 1)).modify(addOne.lens(second)))
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
