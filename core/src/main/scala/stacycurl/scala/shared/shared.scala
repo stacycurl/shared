@@ -49,11 +49,15 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
 
   def get(): A = lock.withRead(value)
 
-  def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = lock.withWrite {
-    val oldA = value
-    value = f(value)
+  def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B = {
+    val (oldA, newA) = lock.withWrite {
+      val oldA = value
+      value = f(oldA)
 
-    g(oldA, value)
+      (oldA, value)
+    }
+
+    g(oldA, newA)
   }
 }
 
