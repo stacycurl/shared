@@ -2,6 +2,7 @@ package stacycurl.scala.shared
 
 import java.util.concurrent.locks.{ Lock => JLock, ReadWriteLock => JRWLock, ReentrantReadWriteLock => JRRWLock }
 import scala.collection._
+import scala.collection.generic._
 import scalaz._
 
 
@@ -9,24 +10,19 @@ object Shared {
   def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
 
   implicit object SharedInvariantFunctor extends InvariantFunctor[Shared] {
-    def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] =
-      sa.xmap(aToB, bToA)
+    def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
   }
 
-  implicit class SharedList[A](list: Shared[List[A]]) {
-    def +=(a: A) = list.modify(_ ++ List(a))
-    def clear()  = list.modify(_ => Nil)
+  implicit class SharedList[A](list: Shared[List[A]]) extends mutable.Builder[A, List[A]] {
+    def +=(a: A): this.type = { list.modify(_ :+ a); this }
+    def clear(): Unit       = list.modify(_ => Nil)
+    def result(): List[A]   = list.get()
   }
 
   implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
-    def sortBy[B](f: A => B)(implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
-      seqLike.transform(_.sortBy(f))
-
-    def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] =
-      seqLike.transform(_.sortWith(lt))
-
-    def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] =
-      seqLike.transform(_.sorted[B])
+    def sortBy[B](f: A => B)(implicit ordering: scala.Ordering[B]): Shared[CC[A]] = seqLike.transform(_.sortBy(f))
+    def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] = seqLike.transform(_.sortWith(lt))
+    def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] = seqLike.transform(_.sorted[B])
   }
 }
 
@@ -72,8 +68,8 @@ case class Synchronized(monitor: AnyRef = new Object) extends Lock {
 }
 
 case class ReadWriteLock(lock: JRWLock = new JRRWLock()) extends Lock {
-  def withRead[A](f: => A): A   = withLock(lock.readLock(), f)
-  def withWrite[A](f: => A): A  = withLock(lock.writeLock(), f)
+  def withRead[A](f: => A): A  = withLock(lock.readLock(), f)
+  def withWrite[A](f: => A): A = withLock(lock.writeLock(), f)
 
   private def withLock[A](lock: JLock, f: => A): A = try {
     lock.lock(); f
