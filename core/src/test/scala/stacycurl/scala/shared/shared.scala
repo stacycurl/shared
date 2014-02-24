@@ -171,12 +171,8 @@ class SharedTests {
     assertEquals(stack.get().padTo(5, 0), stack.transform(_.padTo(5, 0)).get())
   }
 
-  @Test def canGetReadOnlyView {
-    assertEquals("value", Shared("value").reader.get())
-  }
-
   @Test def canMapOverReader {
-    assertEquals("321", Shared("123").reader.map(_.reverse).get())
+    assertEquals("321", Shared("123").map(_.reverse).get())
   }
 
   @Test def canMapOverUpdate {

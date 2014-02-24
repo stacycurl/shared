@@ -30,14 +30,12 @@ object Shared {
   }
 }
 
-trait Shared[A] {
-  def get(): A
+trait Shared[A] extends Reader[A] {
   def modifyAndCalc[B](f: A => A)(g: (A, A) => B): B
 
   def modify(f: A => A): A               = modifyAndCalc(f) { case (old, _)      => old      }
   def modifyAndGet(f: A => A): A         = modifyAndCalc(f) { case (_, modified) => modified }
   def modify[B](update: Update[A, B]): B = update(this)
-  def reader: Reader[A]                  = SharedReader[A](this)
 
   def lens[B](lens: Lens[A, B]): Shared[B]           = LensShared[A, B](this, lens)
   def transform(f: A => A): Shared[A]                = xmap[A](f, identity[A])
@@ -112,10 +110,6 @@ object Reader {
 trait Reader[+A] {
   def get(): A
   def map[B](f: A => B): Reader[B] = MappedReader(this, f)
-}
-
-case class SharedReader[A](sa: Shared[A]) extends Reader[A] {
-  def get(): A = sa.get()
 }
 
 case class MappedReader[A, +B](ra: Reader[A], f: A => B) extends Reader[B] {
