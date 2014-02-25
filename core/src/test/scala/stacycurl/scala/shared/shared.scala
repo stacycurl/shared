@@ -34,11 +34,6 @@ class SharedTests {
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
   }
 
-  @Test def reifiedModifyBehavesTheSameAsNormal {
-    assertEquals(Change("initial", "initial >> modified"),
-      Shared("initial").modify(Modify[String](_ ++ " >> modified")))
-  }
-
   @Test def canXmap {
     val string   = Shared("initial")
     val reversed = string.xmap[String](_.reverse, _.reverse)
@@ -78,6 +73,16 @@ class SharedTests {
     assertEquals(Nil, list.get())
   }
 
+  @Test def sharedMapBehavesListMapBuilder {
+    val map: Shared[Map[Int, String]] = Shared(Map(1 -> "one"))
+
+    map += (2 -> "two")
+
+    assertEquals(Map(1 -> "one", 2 -> "two"), map.get())
+    assertEquals(Some("one"), map.get(1))
+    assertEquals(None, map.get(3))
+  }
+
   @Test def canGetSortedViewOfAnySeq {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
@@ -110,22 +115,6 @@ class SharedTests {
     assertEquals(stack.get().padTo(5, 0), stack.transform(_.padTo(5, 0)).get())
   }
 
-  @Test def canMapOverReader {
-    assertEquals("321", Shared("123").map(_.reverse).get())
-  }
-
-  @Test def canXMapOverModify {
-    val addOne: Modify[Int]     = Modify[Int](_ + 1)
-    val addOneS: Modify[String] = addOne.xmap[String](_.toString, _.toInt)
-
-    assertEquals(Change("1", "2"), Shared("1").modify(addOneS))
-  }
-
-  @Test def modifyCanBeAppliedToAPartOfAnotherShared {
-    assertEquals(Change(("one", 1), ("one", 2)),
-      Shared(("one", 1)).modify(Modify[Int](_ + 1).lens(second)))
-  }
-
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 
@@ -144,5 +133,42 @@ class ChangeTests {
         case (initial, modified) => List(initial, modified)
       }
     )
+  }
+
+  @Test def canMapOver {
+    assertEquals(Change("1", "2"), Change(1, 2).map(_.toString))
+  }
+}
+
+class ModifyTests {
+  @Test def behavesTheSameAsUnreifiedModify {
+    assertEquals(Change("initial", "initial >> modified"),
+      Shared("initial").modify(Modify[String](_ ++ " >> modified")))
+  }
+
+  @Test def canXMapOverModify {
+    val addOne: Modify[Int]     = Modify[Int](_ + 1)
+    val addOneS: Modify[String] = addOne.xmap[String](_.toString, _.toInt)
+
+    assertEquals(Change("1", "2"), Shared("1").modify(addOneS))
+  }
+
+  @Test def modifyCanBeAppliedToAPartOfAnotherShared {
+    assertEquals(Change(("one", 1), ("one", 2)),
+      Shared(("one", 1)).modify(Modify[Int](_ + 1).lens(second)))
+  }
+
+  private val second = Lens.secondLens[String, Int]
+}
+
+class ReaderTests {
+  @Test def canCastReaderToValue {
+    val reader = new Reader[Int] { def get() = 3 }
+
+    assertEquals(3, (reader: Int))
+  }
+
+  @Test def canMapOverReader {
+    assertEquals("321", Shared("123").map(_.reverse).get())
   }
 }

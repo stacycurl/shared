@@ -1,7 +1,8 @@
 package stacycurl.scala.shared
 
 import java.util.concurrent.locks.{ Lock => JLock, ReadWriteLock => JRWLock, ReentrantReadWriteLock => JRRWLock }
-import scala.collection._
+import scala.collection.SeqLike
+import scala.collection.mutable.Builder
 import scala.collection.generic._
 import scalaz._
 
@@ -13,10 +14,14 @@ object Shared {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
   }
 
-  implicit class SharedList[A](list: Shared[List[A]]) extends mutable.Builder[A, List[A]] {
+  implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
     def +=(a: A): this.type = { list.modify(_ :+ a); this }
     def clear(): Unit       = list.modify(_ => Nil)
     def result(): List[A]   = list.get()
+  }
+
+  implicit class SharedMap[K, V](map: Shared[Map[K, V]]) {
+    def +=(kv: (K, V)) = map.modify(_ + kv)
   }
 
   implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
@@ -80,6 +85,8 @@ case class ReadWriteLock(lock: JRWLock = new JRRWLock()) extends Lock {
 }
 
 object Reader {
+  implicit def readerAsA[A](ra: Reader[A]): A = ra.get()
+
   implicit object ReaderFunctor extends Functor[Reader] {
     def map[A, B](ra: Reader[A])(f: A => B): Reader[B] = ra.map(f)
   }

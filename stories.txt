@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ pimp Shared[Map[K, V]] to behave a bit like MapBuilder
 + Replace modifyAndGet & modifyAndCalc by returning Change from modify
 + generalise locking
 + add Modify[A].andCalc[B]
