@@ -61,6 +61,19 @@ class SharedTests {
     assertEquals(("one >> two", 2), tuple.get())
   }
 
+  @Test def canZip {
+    val string = Shared("one")
+    val int    = Shared(1)
+    val tuple  = string.zip(int)
+
+    assertEquals(("one", 1), tuple.get())
+
+    assertEquals(Change(("one", 1), ("two", 2)), tuple.modify(_ => ("two", 2)))
+
+    assertEquals("two", string.get())
+    assertEquals(2,     int.get())
+  }
+
   @Test def sharedListBehavesLikeListBuffer {
     val list = Shared(List("initial"))
 
@@ -138,6 +151,10 @@ class ChangeTests {
   @Test def canMapOver {
     assertEquals(Change("1", "2"), Change(1, 2).map(_.toString))
   }
+
+  @Test def canZip {
+    assertEquals(Change(("one", 1), ("two", 2)), Change("one", "two").zip(Change(1, 2)))
+  }
 }
 
 class ModifyTests {
@@ -158,17 +175,29 @@ class ModifyTests {
       Shared(("one", 1)).modify(Modify[Int](_ + 1).lens(second)))
   }
 
+  @Test def canZip {
+    val append = Modify[String](_ => "two")
+    val add    = Modify[Int](_ => 2)
+    val zipped = append.zip(add)
+
+    assertEquals(Change(("one", 1), ("two", 2)), Shared(("one", 1)).modify(zipped))
+  }
+
   private val second = Lens.secondLens[String, Int]
 }
 
 class ReaderTests {
   @Test def canCastReaderToValue {
-    val reader = new Reader[Int] { def get() = 3 }
-
-    assertEquals(3, (reader: Int))
+    assertEquals(3, (reader(3): Int))
   }
 
   @Test def canMapOverReader {
-    assertEquals("321", Shared("123").map(_.reverse).get())
+    assertEquals("321", reader("123").map(_.reverse).get())
   }
+
+  @Test def canZip {
+    assertEquals(("one", 1), reader("one").zip(reader(1)).get())
+  }
+
+  private def reader[A](a: A) = new Reader[A] { def get() = a }
 }
