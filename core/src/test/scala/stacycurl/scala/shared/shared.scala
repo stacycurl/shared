@@ -2,6 +2,7 @@ package stacycurl.scala.shared
 
 import org.junit.Test
 import scala.collection.immutable.Stack
+import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 import org.junit.Assert._
@@ -156,6 +157,82 @@ class SharedTests {
     val string = Shared("foo")
 
     assertEquals(None, string.await(_ == "bar", 1))
+  }
+
+  @Test def canNotifyOnChange {
+    val int = Shared(1)
+    val intChanges = int.changes
+
+    assertEquals(Nil, intChanges.get())
+
+    int.modify(_ => 2)
+
+    assertEquals(Change.many(1, 2), intChanges.get())
+  }
+
+  @Test def xmappedSharedCanNotifyOnChange {
+    val int    = Shared(1)
+    val double = int.xmap[Double](_.toDouble, _.toInt)
+
+    val intChanges    = int.changes
+    val doubleChanges = double.changes
+
+    assertEquals(Nil, doubleChanges.get())
+
+    int.modify(_ => 2)
+
+    assertEquals(Change.many(1, 2),     intChanges.get())
+    assertEquals(Change.many(1.0, 2.0), doubleChanges.get())
+
+    double.modify(_ => 3.0)
+
+    assertEquals(Change.many(1, 2, 3),       intChanges.get())
+    assertEquals(Change.many(1.0, 2.0, 3.0), doubleChanges.get())
+  }
+
+  @Test def lensSharedCanNotifyOnChange {
+    val tuple  = Shared(("one", 1))
+    val string = tuple.lens(first)
+
+    val tupleChanges  = tuple.changes
+    val stringChanges = string.changes
+
+    assertEquals(Nil, stringChanges.get())
+
+    tuple.modify(_ => ("two", 2))
+
+    assertEquals(Change.many(("one", 1), ("two", 2)), tupleChanges.get())
+    assertEquals(Change.many("one", "two"),           stringChanges.get())
+
+    string.modify(_ => "three")
+
+    assertEquals(Change.many(("one", 1), ("two", 2), ("three", 2)), tupleChanges.get())
+    assertEquals(Change.many("one", "two", "three"),                stringChanges.get())
+  }
+
+  @Test def zipSharedCanNotifyOnChange {
+    val int    = Shared(1)
+    val string = Shared("one")
+    val tuple  = int.zip(string)
+
+    val intChanges    = int.changes
+    val stringChanges = string.changes
+    val tupleChanges  = tuple.changes
+
+    assertEquals(Nil, tupleChanges.get())
+
+    int.modify(_ => 2)
+
+    assertEquals(Change.many((1, "one"), (2, "one")), tupleChanges.get())
+
+    string.modify(_ => "two")
+
+    assertEquals(Change.many((1, "one"), (2, "one"), (2, "two")), tupleChanges.get())
+
+    tuple.modify(_ => (3, "three"))
+
+    assertEquals(Change.many(1, 2, 3),               intChanges.get())
+    assertEquals(Change.many("one", "two", "three"), stringChanges.get())
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =

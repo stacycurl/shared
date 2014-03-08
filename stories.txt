@@ -1,9 +1,9 @@
 Todo
-- change history
 - stream
 - rx
 
 Done
++ change history + onChange
 + await(predicate: A +> Boolean, timeout: Long)
 + await(predicate: A +> Boolean)
 + can zip Reader, Shared, Modify, Change, Lock
