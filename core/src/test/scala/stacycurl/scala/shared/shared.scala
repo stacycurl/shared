@@ -231,8 +231,9 @@ class SharedTests {
 
     tuple.modify(_ => (3, "three"))
 
-    assertEquals(Change.many(1, 2, 3),               intChanges.get())
-    assertEquals(Change.many("one", "two", "three"), stringChanges.get())
+    assertEquals(Change.many(1, 2, 3),                                          intChanges.get())
+    assertEquals(Change.many("one", "two", "three"),                            stringChanges.get())
+    assertEquals(Change.many((1, "one"), (2, "one"), (2, "two"), (3, "three")), tupleChanges.get())
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =

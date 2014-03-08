@@ -3,6 +3,7 @@ Todo
 - rx
 
 Done
++ changs to ZippedShared should look atomic
 + change history + onChange
 + await(predicate: A +> Boolean, timeout: Long)
 + await(predicate: A +> Boolean)

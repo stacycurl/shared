@@ -102,6 +102,9 @@ case class Callback[A](value: Change[A] => Unit) extends (Change[A] => Unit) {
 
   def contramap[B](bToA: B => A): Callback[B] =
     Callback[B]((changeB: Change[B]) => apply(changeB.map(bToA)))
+
+  def guard(condition: Shared[Boolean]): Callback[A] =
+    Callback[A]((changeA: Change[A]) => if (condition.get()) apply(changeA))
 }
 
 case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
@@ -122,22 +125,34 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   def get(): (A, B) = (sa.get(), sb.get())
 
   def onChange(callbackAB: Callback[(A, B)]): this.type = {
-    sa.onChange((changeA: Change[A]) => callbackAB(changeA.zip(Change.pure(sb.get()))))
-    sb.onChange((changeB: Change[B]) => callbackAB(Change.pure(sa.get()).zip(changeB)))
+    callbacks += callbackAB
+    val guardedCallback = callbackAB.guard(allowCallback)
+    sa.onChange((changeA: Change[A]) => guardedCallback(changeA.zip(Change.pure(sb.get()))))
+    sb.onChange((changeB: Change[B]) => guardedCallback(Change.pure(sa.get()).zip(changeB)))
     this
   }
 
-  def modify(f: ((A, B)) => (A, B)): Change[(A, B)] = lock.withWrite {
-    val oldAB@(oldA, oldB) = (sa.get(), sb.get())
-    val newAB@(newA, newB) = f(oldA, oldB)
+  def modify(f: ((A, B)) => (A, B)): Change[(A, B)] = {
+    val change = lock.withWrite {
+      val oldAB@(oldA, oldB) = (sa.get(), sb.get())
+      val newAB@(newA, newB) = f(oldA, oldB)
 
-    sa.modify(_ => newA)
-    sb.modify(_ => newB)
+      allowCallback.modify(_ => false)
+      sa.modify(_ => newA)
+      sb.modify(_ => newB)
+      allowCallback.modify(_ => true)
 
-    Change(oldAB, newAB)
+      Change(oldAB, newAB)
+    }
+
+    callbacks.foreach(callback => callback(change))
+    change
   }
 
   val lock = new ZippedLock(sa.lock, sb.lock)
+
+  private lazy val allowCallback: Shared[Boolean] = Shared(true)
+  private lazy val callbacks: Shared[List[Callback[(A, B)]]] = Shared(Nil)
 }
 
 object Lock {
