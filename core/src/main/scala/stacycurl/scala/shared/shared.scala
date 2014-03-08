@@ -1,6 +1,7 @@
 package stacycurl.scala.shared
 
 import java.util.concurrent.locks.{ Lock => JLock, ReadWriteLock => JRWLock, ReentrantReadWriteLock => JRRWLock }
+import scala.annotation.tailrec
 import scala.collection.SeqLike
 import scala.collection.mutable.Builder
 import scala.collection.generic._
@@ -36,10 +37,22 @@ object Shared {
 }
 
 trait Shared[A] extends Reader[A] {
-  def await(p: A => Boolean) = {
-    while(!p(get())) {
-      Thread.sleep(100)
+  def await(p: A => Boolean, timeoutMillis: Long = 0): Option[A] = {
+    val (start, minSleep) = (System.currentTimeMillis(), 100)
+
+    @tailrec def recurse(): Option[A] = {
+      val value = get()
+
+      val remainingTime =
+        if (timeoutMillis == 0) minSleep else timeoutMillis - (System.currentTimeMillis() - start)
+
+      if (p(value)) Some(value) else if (remainingTime <= 0) None else {
+        Thread.sleep(math.min(minSleep, remainingTime))
+        recurse()
+      }
     }
+
+    recurse()
   }
 
   def modify(f: A => A): Change[A]

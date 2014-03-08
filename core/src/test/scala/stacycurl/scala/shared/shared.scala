@@ -130,6 +130,8 @@ class SharedTests {
 
   @Test def canAwaitForPredicate {
     val string = Shared("foo")
+    assertEquals(Some("foo"), string.await(_ == "foo"))
+
     val doneAwaiting = new java.util.concurrent.CountDownLatch(1)
     val started = new java.util.concurrent.CountDownLatch(1)
 
@@ -148,6 +150,12 @@ class SharedTests {
     string.modify(_ => "bar"); Thread.sleep(500)
 
     assertEquals(0, doneAwaiting.getCount())
+  }
+
+  @Test def awaitCanTimeout {
+    val string = Shared("foo")
+
+    assertEquals(None, string.await(_ == "bar", 1))
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
