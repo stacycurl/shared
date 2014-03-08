@@ -36,6 +36,12 @@ object Shared {
 }
 
 trait Shared[A] extends Reader[A] {
+  def await(p: A => Boolean) = {
+    while(!p(get())) {
+      Thread.sleep(100)
+    }
+  }
+
   def modify(f: A => A): Change[A]
 
   def lens[B](lens: Lens[A, B]): Shared[B]           = LensShared[A, B](this, lens)

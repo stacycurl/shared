@@ -5,6 +5,7 @@ Todo
 - rx
 
 Done
++ await(predicate: A +> Boolean)
 + can zip Reader, Shared, Modify, Change, Lock
 + pimp Shared[Map[K, V]] to behave a bit like MapBuilder
 + Replace modifyAndGet & modifyAndCalc by returning Change from modify
