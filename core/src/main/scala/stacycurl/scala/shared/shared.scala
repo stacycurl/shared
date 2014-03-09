@@ -17,6 +17,9 @@ object Shared {
     def zip[A, B](sa: => Shared[A], sb: => Shared[B]): Shared[(A, B)] = sa.zip(sb)
   }
 
+  implicit def sharedShow[A: Show]: Show[Shared[A]] =
+    Show.show[Shared[A]]((sa: Shared[A]) => Show[A].show(sa.get()))
+
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
     def +=(a: A): this.type = { list.modify(_ :+ a); this }
     def clear(): Unit       = list.modify(_ => Nil)
@@ -216,6 +219,9 @@ object Reader {
 
     override def map[A, B](ra: Reader[A])(f: A => B): Reader[B] = ra.map(f)
   }
+
+  implicit def readerShow[A: Show]: Show[Reader[A]] =
+    Show.show[Reader[A]]((ra: Reader[A]) => Show[A].show(ra.get()))
 }
 
 trait Reader[+A] {
