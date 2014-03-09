@@ -11,8 +11,10 @@ import scalaz._
 object Shared {
   def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
 
-  implicit object SharedInvariantFunctor extends InvariantFunctor[Shared] {
+  implicit object SharedInstance extends InvariantFunctor[Shared] with Zip[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
+
+    def zip[A, B](sa: => Shared[A], sb: => Shared[B]): Shared[(A, B)] = sa.zip(sb)
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
@@ -29,10 +31,6 @@ object Shared {
     def sortBy[B](f: A => B)(implicit ordering: scala.Ordering[B]): Shared[CC[A]] = seqLike.transform(_.sortBy(f))
     def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] = seqLike.transform(_.sortWith(lt))
     def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] = seqLike.transform(_.sorted[B])
-  }
-
-  implicit object SharedZip extends Zip[Shared] {
-    def zip[A, B](sa: => Shared[A], sb: => Shared[B]): Shared[(A, B)] = sa.zip(sb)
   }
 }
 
