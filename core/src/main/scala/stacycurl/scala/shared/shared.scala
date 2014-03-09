@@ -266,8 +266,11 @@ case class Change[+A](before: A, after: A) {
 }
 
 object Modify {
-  implicit def modifyInvariantFunctor[B]: InvariantFunctor[Modify] = new InvariantFunctor[Modify] {
+  implicit object ModifyInstance extends InvariantFunctor[Modify] with Zip[Modify] {
     def xmap[A, B](ma: Modify[A], aToB: A => B, bToA: B => A): Modify[B] = ma.xmap[B](aToB, bToA)
+
+    def zip[A, B](ma: => Modify[A], mb: => Modify[B]): Modify[(A, B)] =
+      Modify[(A, B)] { case (a, b) => (ma(a), mb(b)) }
   }
 }
 
