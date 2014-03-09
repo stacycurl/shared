@@ -97,22 +97,6 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   private lazy val callbacks: Shared[List[Callback[A]]] = Shared(Nil)
 }
 
-object Callback {
-  implicit object CallbackContravariant extends Contravariant[Callback] {
-    def contramap[A, B](ca: Callback[A])(f: B => A): Callback[B] = ca.contramap(f)
-  }
-}
-
-case class Callback[A](value: Change[A] => Unit) extends (Change[A] => Unit) {
-  def apply(change: Change[A]): Unit = value(change)
-
-  def contramap[B](bToA: B => A): Callback[B] =
-    Callback[B]((changeB: Change[B]) => apply(changeB.map(bToA)))
-
-  def guard(condition: Shared[Boolean]): Callback[A] =
-    Callback[A]((changeA: Change[A]) => if (condition.get()) apply(changeA))
-}
-
 case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
   def get(): B = aToB(sa.get())
   def onChange(callbackB: Callback[B]): this.type = {sa.onChange(callbackB.contramap(aToB)); this}
