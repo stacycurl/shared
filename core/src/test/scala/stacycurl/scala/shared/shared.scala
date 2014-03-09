@@ -247,24 +247,6 @@ class SharedTests {
   private val second = Lens.secondLens[String, Int]
 }
 
-class ChangeTests {
-  @Test def calcPerformsCalculateOnOldAndModifiedValue {
-    assertEquals(List("initial", "initial >> modified"),
-      Change("initial", "initial >> modified").calc {
-        case (initial, modified) => List(initial, modified)
-      }
-    )
-  }
-
-  @Test def canMapOver {
-    assertEquals(Change("1", "2"), Change(1, 2).map(_.toString))
-  }
-
-  @Test def canZip {
-    assertEquals(Change(("one", 1), ("two", 2)), Change("one", "two").zip(Change(1, 2)))
-  }
-}
-
 class ReaderTests {
   @Test def canCastReaderToValue {
     assertEquals(3, (reader(3): Int))
