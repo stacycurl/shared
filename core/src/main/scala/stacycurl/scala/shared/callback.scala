@@ -4,14 +4,14 @@ import scalaz._
 
 
 object Callback {
+  def apply[A](callback: Change[A] => Unit): Callback[A] = SingleCallback[A](callback)
+
   implicit object CallbackContravariant extends Contravariant[Callback] {
     def contramap[A, B](ca: Callback[A])(f: B => A): Callback[B] = ca.contramap(f)
   }
 }
 
-case class Callback[A](value: Change[A] => Unit) extends (Change[A] => Unit) {
-  def apply(change: Change[A]): Unit = value(change)
-
+trait Callback[A] extends (Change[A] => Change[A]) {
   def contramap[B](bToA: B => A): Callback[B] =
     Callback[B]((changeB: Change[B]) => apply(changeB.map(bToA)))
 
@@ -19,7 +19,11 @@ case class Callback[A](value: Change[A] => Unit) extends (Change[A] => Unit) {
     Callback[A]((changeA: Change[A]) => if (condition.get()) apply(changeA))
 }
 
-class Callbacks[A] {
+case class SingleCallback[A](value: Change[A] => Unit) extends Callback[A] {
+  def apply(change: Change[A]): Change[A] = { value(change); change }
+}
+
+class Callbacks[A] extends Callback[A] {
   def apply(change: Change[A]): Change[A] = {
     callbacks.foreach(callback => callback.apply(change))
     change
