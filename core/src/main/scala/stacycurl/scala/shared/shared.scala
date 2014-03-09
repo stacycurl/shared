@@ -97,6 +97,12 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   private lazy val callbacks: Shared[List[Callback[A]]] = Shared(Nil)
 }
 
+object Callback {
+  implicit object CallbackContravariant extends Contravariant[Callback] {
+    def contramap[A, B](ca: Callback[A])(f: B => A): Callback[B] = ca.contramap(f)
+  }
+}
+
 case class Callback[A](value: Change[A] => Unit) extends (Change[A] => Unit) {
   def apply(change: Change[A]): Unit = value(change)
 
