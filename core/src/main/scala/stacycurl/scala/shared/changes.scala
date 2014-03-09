@@ -31,7 +31,7 @@ object Changes {
   }
 }
 
-trait Changes[A] {
+trait Changes[A] extends Reader[List[Change[A]]] {
   def get(): List[Change[A]]
   def clear(): this.type
 

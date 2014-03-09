@@ -18,3 +18,14 @@ case class Callback[A](value: Change[A] => Unit) extends (Change[A] => Unit) {
   def guard(condition: Shared[Boolean]): Callback[A] =
     Callback[A]((changeA: Change[A]) => if (condition.get()) apply(changeA))
 }
+
+class Callbacks[A] {
+  def apply(change: Change[A]): Change[A] = {
+    callbacks.foreach(callback => callback.apply(change))
+    change
+  }
+
+  def +=(callback: Callback[A]) = callbacks += callback
+
+  private lazy val callbacks: Shared[List[Callback[A]]] = Shared(Nil)
+}

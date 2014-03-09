@@ -82,19 +82,14 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   def get(): A = lock.withRead(value)
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
-  def modify(f: A => A): Change[A] = {
-    val change = lock.withWrite {
-      val oldA = value
-      value = f(oldA)
+  def modify(f: A => A): Change[A] = callbacks(lock.withWrite {
+    val oldA = value
+    value = f(oldA)
 
-      Change(oldA, value)
-    }
+    Change(oldA, value)
+  })
 
-    callbacks.foreach(callback => callback(change))
-    change
-  }
-
-  private lazy val callbacks: Shared[List[Callback[A]]] = Shared(Nil)
+  private val callbacks: Callbacks[A] = new Callbacks[A]
 }
 
 case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
@@ -122,25 +117,20 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
     this
   }
 
-  def modify(f: ((A, B)) => (A, B)): Change[(A, B)] = {
-    val change = lock.withWrite {
-      val oldAB@(oldA, oldB) = (sa.get(), sb.get())
-      val newAB@(newA, newB) = f(oldA, oldB)
+  def modify(f: ((A, B)) => (A, B)): Change[(A, B)] = callbacks(lock.withWrite {
+    val oldAB@(oldA, oldB) = (sa.get(), sb.get())
+    val newAB@(newA, newB) = f(oldA, oldB)
 
-      allowCallback.modify(_ => false)
-      sa.modify(_ => newA)
-      sb.modify(_ => newB)
-      allowCallback.modify(_ => true)
+    allowCallback.modify(_ => false)
+    sa.modify(_ => newA)
+    sb.modify(_ => newB)
+    allowCallback.modify(_ => true)
 
-      Change(oldAB, newAB)
-    }
-
-    callbacks.foreach(callback => callback(change))
-    change
-  }
+    Change(oldAB, newAB)
+  })
 
   val lock = new ZippedLock(sa.lock, sb.lock)
 
-  private lazy val allowCallback: Shared[Boolean] = Shared(true)
-  private lazy val callbacks: Shared[List[Callback[(A, B)]]] = Shared(Nil)
+  private val allowCallback: Shared[Boolean] = Shared(true)
+  private val callbacks: Callbacks[(A, B)] = new Callbacks[(A, B)]
 }
