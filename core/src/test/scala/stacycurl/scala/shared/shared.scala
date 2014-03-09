@@ -236,6 +236,19 @@ class SharedTests {
     assertEquals(Change.many((1, "one"), (2, "one"), (2, "two"), (3, "three")), tupleChanges.get())
   }
 
+  @Test def canClearChanges {
+    val int = Shared(1)
+    val changes = int.changes
+
+    int.modify(_ => 2)
+
+    assertEquals(Change.many(1, 2), changes.get())
+
+    changes.clear()
+
+    assertEquals(Nil, changes.get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

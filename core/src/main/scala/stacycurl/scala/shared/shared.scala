@@ -55,12 +55,12 @@ trait Shared[A] extends Reader[A] {
     recurse()
   }
 
-  def changes: Reader[List[Change[A]]] = {
+  def changes: Changes[A] = {
     val result = Shared[List[Change[A]]](Nil)
 
     onChange(result += _)
 
-    result
+    Changes[A](result)
   }
 
   def onChange(callback: Change[A] => Unit): this.type = onChange(Callback(callback))
@@ -117,8 +117,8 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   def onChange(callbackAB: Callback[(A, B)]): this.type = {
     callbacks += callbackAB
     val guardedCallback = callbackAB.guard(allowCallback)
-    sa.onChange((changeA: Change[A]) => guardedCallback(changeA.zip(Change.pure(sb.get()))))
-    sb.onChange((changeB: Change[B]) => guardedCallback(Change.pure(sa.get()).zip(changeB)))
+    sa.onChange((changeA: Change[A]) => guardedCallback(changeA.zip(Change.point(sb.get()))))
+    sb.onChange((changeB: Change[B]) => guardedCallback(Change.point(sa.get()).zip(changeB)))
     this
   }
 
