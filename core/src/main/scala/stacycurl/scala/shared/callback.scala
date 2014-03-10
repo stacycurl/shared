@@ -15,8 +15,8 @@ trait Callback[A] extends (Change[A] => Change[A]) {
   def contramap[B](bToA: B => A): Callback[B] =
     Callback[B]((changeB: Change[B]) => apply(changeB.map(bToA)))
 
-  def guard(condition: Shared[Boolean]): Callback[A] =
-    Callback[A]((changeA: Change[A]) => if (condition.get()) apply(changeA))
+  def guard(condition: () => Boolean): Callback[A] =
+    Callback[A]((changeA: Change[A]) => if (condition()) apply(changeA))
 }
 
 case class SingleCallback[A](value: Change[A] => Unit) extends Callback[A] {

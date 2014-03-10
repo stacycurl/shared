@@ -30,7 +30,8 @@ object Reader {
     Show.show[Reader[A]]((ra: Reader[A]) => Show[A].show(ra.get()))
 }
 
-trait Reader[+A] {
+trait Reader[+A] extends (() => A) {
+  def apply(): A = get()
   def get(): A
   def map[B](f: A => B): Reader[B] = MappedReader(this, f)
   def zip[B](rb: Reader[B]): Reader[(A, B)] = ZippedReader[A, B](this, rb)
