@@ -1,5 +1,6 @@
 package stacycurl.scala.shared
 
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
 import scala.collection.immutable.Stack
 import scala.collection.mutable.ListBuffer
@@ -33,6 +34,14 @@ class SharedTests {
     modifiers.foreach(_.join())
 
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
+  }
+
+  @Test def updateIsModifyWithActions {
+    val boolean = Shared(new AtomicInteger(1)) // perverse but just want an example
+
+    boolean.update(_.incrementAndGet())
+
+    assertEquals(2, boolean.get().get())
   }
 
   @Test def canXmap {

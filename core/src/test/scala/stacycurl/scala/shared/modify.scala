@@ -1,5 +1,6 @@
 package stacycurl.scala.shared
 
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
 
 import org.junit.Assert._
@@ -30,6 +31,16 @@ class ModifyTests {
     val zipped = append.zip(add)
 
     assertEquals(Change(("one", 1), ("two", 2)), Shared(("one", 1)).modify(zipped))
+  }
+
+  @Test def updateIsLikeModifyButForActions {
+    val boolean = Shared(new AtomicInteger(1)) // perverse but I just want an example
+
+    val addOne = Update[AtomicInteger](_.incrementAndGet())
+
+    boolean.modify(addOne)
+
+    assertEquals(2, boolean.get().get())
   }
 
   private val second = Lens.secondLens[String, Int]

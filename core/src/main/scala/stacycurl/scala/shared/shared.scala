@@ -66,6 +66,7 @@ trait Shared[A] extends Reader[A] {
   def onChange(callback: Change[A] => Unit): this.type = onChange(Callback(callback))
   def onChange(callback: Callback[A]): this.type
 
+  def update(action: A => Unit): Change[A] = modify((a: A) => {action(a); a})
   def modify(f: A => A): Change[A]
 
   def lens[B](lens: Lens[A, B]): Shared[B]           = LensShared[A, B](this, lens)

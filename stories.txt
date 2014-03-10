@@ -1,10 +1,9 @@
 Todo
 - stream
 - rx
-- modify(a => b)
-- modify(a => unit)
 
 Done
++ update[A](action: A => Unit) + Update[A](action: A => Unit)
 + Made Reader[A] extends (() => A)
 + Added 'Unlocked' for unsafe access to Shared
 + Changed Shared.change to return 'Changes' so they can be cleared (without exposing the underlying Shared)
