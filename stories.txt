@@ -1,8 +1,11 @@
 Todo
 - stream
 - rx
+- modify(a => b)
+- modify(a => unit)
 
 Done
++ Added 'Unlocked' for unsafe access to Shared
 + Changed Shared.change to return 'Changes' so they can be cleared (without exposing the underlying Shared)
 + changs to ZippedShared should look atomic
 + change history + onChange

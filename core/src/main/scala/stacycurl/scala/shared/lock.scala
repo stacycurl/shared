@@ -34,6 +34,12 @@ case class ReadWriteLock(lock: JRWLock = new JRRWLock()) extends Lock {
   }
 }
 
+case object Unlocked extends Lock {
+  def withRead[A](f: => A): A = f
+  def withWrite[A](f: => A): A = f
+  override def zip(other: Lock): Lock = other
+}
+
 class ZippedLock(left: Lock, right: Lock) extends Lock {
   def withRead[A](f: => A): A  = left.withRead(right.withRead(f))
   def withWrite[A](f: => A): A = left.withWrite(right.withWrite(f))
