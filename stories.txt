@@ -3,6 +3,7 @@ Todo
 - rx
 
 Done
++ Added Unzip instances
 + update[A](action: A => Unit) + Update[A](action: A => Unit)
 + Made Reader[A] extends (() => A)
 + Added 'Unlocked' for unsafe access to Shared

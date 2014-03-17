@@ -7,7 +7,9 @@ import scalaz.std.list._
 object Changes {
   def apply[A](changes: Shared[List[Change[A]]]): Changes[A] = SharedChanges(changes)
 
-  implicit object ChangeeInstance extends Monad[Changes] with Traverse[Changes] with Zip[Changes] {
+  implicit object ChangeeInstance extends Monad[Changes] with Traverse[Changes] with Unzip[Changes]
+    with Zip[Changes] {
+
     def point[A](a: => A): Changes[A] = SharedChanges(Shared(List(Change.point(a))))
 
     def bind[A, B](csa: Changes[A])(f: A => Changes[B]): Changes[B] = csa.flatMap(f)
@@ -24,6 +26,9 @@ object Changes {
 
       result
     }
+
+    def unzip[A, B](csab: Changes[(A, B)]): (Changes[A], Changes[B]) =
+      (map[(A, B), A](csab)(_._1), map[(A, B), B](csab)(_._2))
 
     def zip[A, B](csa: => Changes[A], csb: => Changes[B]): Changes[(A, B)] = csa.zip(csb)
 

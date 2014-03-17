@@ -7,7 +7,7 @@ object Reader {
   implicit def readerAsA[A](ra: Reader[A]): A = ra.get()
 
   implicit object ReaderInstance extends Comonad[Reader] with Cozip[Reader] with Monad[Reader]
-    with Traverse[Reader] with Zip[Reader] {
+    with Traverse[Reader] with Unzip[Reader] with Zip[Reader] {
 
     def point[A](a: => A): Reader[A] = FunctionReader[A](() => a)
     def copoint[A](ra: Reader[A]): A = ra.get()
@@ -22,6 +22,8 @@ object Reader {
 
     def cozip[A, B](rab: Reader[A \/ B]): Reader[A] \/ Reader[B] =
       rab.get().bimap((a: A) => point(a), (b: B) => point(b))
+
+    def unzip[A, B](rab: Reader[(A, B)]): (Reader[A], Reader[B]) = (rab.map(_._1), rab.map(_._2))
 
     override def map[A, B](ra: Reader[A])(f: A => B): Reader[B] = ra.map(f)
   }

@@ -10,10 +10,13 @@ import scalaz._
 object Shared {
   def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
 
-  implicit object SharedInstance extends InvariantFunctor[Shared] with Zip[Shared] {
+  implicit object SharedInstance extends InvariantFunctor[Shared] with Unzip[Shared] with Zip[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
 
     def zip[A, B](sa: => Shared[A], sb: => Shared[B]): Shared[(A, B)] = sa.zip(sb)
+
+    def unzip[A, B](sab: Shared[(A, B)]): (Shared[A], Shared[B]) =
+      (sab.lens(Lens.firstLens), sab.lens(Lens.secondLens))
   }
 
   implicit def sharedShow[A: Show]: Show[Shared[A]] =

@@ -9,7 +9,7 @@ object Change {
   def tuple[A](beforeAfter: (A, A)): Change[A] = Change(beforeAfter._1, beforeAfter._2)
 
   implicit object ChangeInstance extends Comonad[Change] with Monad[Change]
-    with Traverse[Change] with Zip[Change] {
+    with Traverse[Change] with Unzip[Change] with Zip[Change] {
 
     def point[A](a: => A): Change[A] = Change(a, a)
     def copoint[A](ca: Change[A]): A = ca.after
@@ -21,6 +21,8 @@ object Change {
       Functor[G].map[B, Change[B]](f(ca.after))((b: B) => point(b))
 
     def zip[A, B](ca: => Change[A], cb: => Change[B]): Change[(A, B)] = ca.zip(cb)
+
+    def unzip[A, B](cab: Change[(A, B)]): (Change[A], Change[B]) = (cab.map(_._1), cab.map(_._2))
 
     override def map[A, B](ca: Change[A])(f: A => B): Change[B] = ca.map(f)
   }
