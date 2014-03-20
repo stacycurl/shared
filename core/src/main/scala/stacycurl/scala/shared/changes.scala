@@ -5,6 +5,8 @@ import scalaz.std.list._
 
 
 object Changes {
+  def many[A](as: A*): Changes[A] = apply(Change.many(as: _*): _*)
+  def apply[A](changes: Change[A]*): Changes[A] = apply(Shared(changes.toList))
   def apply[A](changes: Shared[List[Change[A]]]): Changes[A] = SharedChanges(changes)
 
   implicit object ChangeeInstance extends Monad[Changes] with Traverse[Changes] with Unzip[Changes]
