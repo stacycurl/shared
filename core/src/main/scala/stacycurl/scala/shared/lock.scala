@@ -44,3 +44,14 @@ class ZippedLock(left: Lock, right: Lock) extends Lock {
   def withRead[A](f: => A): A  = left.withRead(right.withRead(f))
   def withWrite[A](f: => A): A = left.withWrite(right.withWrite(f))
 }
+
+// Not sure if this is useful at all, just 'closing' over the types defined
+class SharedLock(value: Shared[Lock] = Shared(Synchronized())) extends Lock with Shared[Lock] {
+  def withRead[A](f: => A): A = value.get().withRead[A](f)
+  def withWrite[A](f: => A): A = value.get().withWrite[A](f)
+
+  def get(): Lock = value.get()
+  def lock: Lock = value.lock
+  def modify(f: Lock => Lock): Change[Lock] = value.modify(f)
+  def onChange(callback: Callback[Lock]) = { value.onChange(callback); this }
+}
