@@ -1,8 +1,12 @@
 Todo
 - stream
 - rx
+- pre-filter changes from shared
 
 Done
++ Added Changes.filter
++ Added Changes.values
++ Added Change.join
 + Added SharedLock
 + Added Unzip instances
 + update[A](action: A => Unit) + Update[A](action: A => Unit)

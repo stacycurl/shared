@@ -5,7 +5,7 @@ import scalaz._
 
 object Change {
   def point[A](a: A): Change[A] = Change[A](a, a)
-  def many[A](as: A*): List[Change[A]] = as.zip(as.tail).map(tuple).toList
+  def many[A](as: A*): List[Change[A]] = if (as.isEmpty) Nil else as.zip(as.tail).map(tuple).toList
   def tuple[A](beforeAfter: (A, A)): Change[A] = Change(beforeAfter._1, beforeAfter._2)
 
   implicit object ChangeInstance extends Comonad[Change] with Monad[Change]
@@ -25,6 +25,11 @@ object Change {
     def unzip[A, B](cab: Change[(A, B)]): (Change[A], Change[B]) = (cab.map(_._1), cab.map(_._2))
 
     override def map[A, B](ca: Change[A])(f: A => B): Change[B] = ca.map(f)
+  }
+
+  implicit class ChangeOps[A](change: Change[A]) {
+    // Can't define this in Change due its contravariance
+    def join(other: Change[A]): Change[A] = Change[A](change.before, other.after)
   }
 }
 
