@@ -84,6 +84,25 @@ class SharedTests {
     assertEquals(2,     int.get())
   }
 
+  @Test def canFilter {
+    val int = Shared(1)
+    val bigInt = int.filter(ci => math.abs(ci.delta) > 1)
+    val bigIntChanges = bigInt.changes
+
+    // The filter cannot constrain the original
+    int += 1
+    assertEquals(2, bigInt.get())
+    assertEquals(List(Change(1, 2)), bigIntChanges.get())
+
+    // But it should constrain the 'view'
+    bigInt += 1
+    assertEquals(2, bigInt.get())
+    assertEquals(List(Change(1, 2)), bigIntChanges.get())
+    bigInt += 2
+    assertEquals(4, bigInt.get())
+    assertEquals(List(Change(1, 2), Change(2, 4)), bigIntChanges.get())
+  }
+
   @Test def sharedListBehavesLikeListBuffer {
     val list = Shared(List("initial"))
 

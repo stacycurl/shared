@@ -22,6 +22,10 @@ object Shared {
   implicit def sharedShow[A: Show]: Show[Shared[A]] =
     Show.show[Shared[A]]((sa: Shared[A]) => Show[A].show(sa.get()))
 
+  implicit class SharedOps[A](sa: Shared[A]) {
+    def +=(delta: Int)(implicit aIsInt: A =:= Int, intIsA: Int =:= A) = sa.modify(_ + delta)
+  }
+
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
     def +=(a: A): this.type = { list.modify(_ :+ a); this }
     def clear(): Unit       = list.modify(_ => Nil)
@@ -69,7 +73,7 @@ trait Shared[A] extends Reader[A] {
   def onChange(callback: Change[A] => Unit): this.type = onChange(Callback(callback))
   def onChange(callback: Callback[A]): this.type
 
-  def update(action: A => Unit): Change[A] = alter((a: A) => {action(a); Change(a, a)})
+  def update(action: A => Unit): Change[A] = alter((a: A) => {action(a); new Unchanged(a)})
   def modify(f: A => A): Change[A] = alter((a: A) => Change(a, f(a)))
   def alter(f: A => Change[A]): Change[A]
 
@@ -77,6 +81,7 @@ trait Shared[A] extends Reader[A] {
   def transform(f: A => A): Shared[A]                = xmap[A](f, identity[A])
   def xmap[B](aToB: A => B, bToA: B => A): Shared[B] = XMapShared[A, B](this, aToB, bToA)
   def zip[B](sb: Shared[B]): Shared[(A, B)]          = ZippedShared[A, B](this, sb)
+  def filter(p: Change[A] => Boolean): Shared[A]     = FilteredShared[A](this, p)
 
   def lock: Lock
 }
@@ -87,12 +92,8 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   def get(): A = lock.withRead(value)
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
-  def alter(f: A => Change[A]): Change[A] = callbacks.apply(lock.withWrite {
-    val change = f(value)
-    value = change.after
-
-    change
-  })
+  def alter(f: A => Change[A]): Change[A] =
+    callbacks.apply(lock.withWrite(f(value).notify(change => value = change.after)))
 
   private val callbacks: Callbacks[A] = new Callbacks[A]
 }
@@ -111,6 +112,13 @@ case class LensShared[A, B](sa: Shared[A], lens: Lens[A, B]) extends Shared[B] {
   def lock = sa.lock
 }
 
+case class FilteredShared[A](sa: Shared[A], p: Change[A] => Boolean) extends Shared[A] {
+  def get(): A = sa.get()
+  def onChange(callback: Callback[A]): this.type = { sa.onChange(callback); this }
+  def alter(f: A => Change[A]): Change[A] = sa.alter((a: A) => f(a).filter(p))
+  def lock: Lock = sa.lock
+}
+
 case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B)] {
   def get(): (A, B) = (sa.get(), sb.get())
 
@@ -123,15 +131,12 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   }
 
   def alter(f: ((A, B)) => Change[(A, B)]): Change[(A, B)] = callbacks.apply(lock.withWrite {
-    val oldAB@(oldA, oldB) = (sa.get(), sb.get())
-    val change = f(oldAB)
-
-    allowCallback.modify(_ => false)
-    sa.modify(_ => change.after._1)
-    sb.modify(_ => change.after._2)
-    allowCallback.modify(_ => true)
-
-    change
+    f((sa.get(), sb.get())).notify(change => {
+      allowCallback.modify(_ => false)
+      sa.modify(_ => change.after._1)
+      sb.modify(_ => change.after._2)
+      allowCallback.modify(_ => true)
+    })
   })
 
   val lock = new ZippedLock(sa.lock, sb.lock)
