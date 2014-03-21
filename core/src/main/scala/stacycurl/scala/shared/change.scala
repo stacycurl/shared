@@ -30,6 +30,7 @@ object Change {
   implicit class ChangeOps[A](change: Change[A]) {
     // Can't define this in Change due its contravariance
     def join(other: Change[A]): Change[A] = Change[A](change.before, other.after)
+    def delta(implicit ev: A =:= Int): Int = change.after - change.before
   }
 }
 

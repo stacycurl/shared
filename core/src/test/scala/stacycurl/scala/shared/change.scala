@@ -26,4 +26,8 @@ class ChangeTests {
   @Test def canJoin {
     assertEquals(Change(1, 3), Change(1, 2).join(Change(2, 3)))
   }
+
+  @Test def canGetDeltaOfIntChange {
+    assertEquals(3, Change(1, 4).delta)
+  }
 }
