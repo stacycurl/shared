@@ -16,7 +16,10 @@ trait Callback[A] extends (Change[A] => Change[A]) {
     Callback[B]((changeB: Change[B]) => apply(changeB.map(bToA)))
 
   def guard(condition: () => Boolean): Callback[A] =
-    Callback[A]((changeA: Change[A]) => if (condition()) apply(changeA))
+    filter(_ => condition())
+
+  def filter(p: Change[A] => Boolean): Callback[A] =
+    Callback[A]((changeA: Change[A]) => if (p(changeA)) apply(changeA))
 }
 
 case class SingleCallback[A](value: Change[A] => Unit) extends Callback[A] {
