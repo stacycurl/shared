@@ -30,4 +30,9 @@ class ChangeTests {
   @Test def canGetDeltaOfIntChange {
     assertEquals(3, Change(1, 4).delta)
   }
+
+  @Test def canFilter {
+    assertEquals(Change(1, 1), Change(1, 2).filter(_.delta > 1))
+    assertEquals(Change(1, 3), Change(1, 3).filter(_.delta > 1))
+  }
 }

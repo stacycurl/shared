@@ -39,4 +39,5 @@ case class Change[+A](before: A, after: A) {
   def map[B](f: A => B): Change[B] = Change[B](f(before), f(after))
   def flatMap[B](f: A => Change[B]): Change[B] = f(after)
   def zip[B](cb: Change[B]): Change[(A, B)] = Change((before, cb.before), (after, cb.after))
+  def filter(p: Change[A] => Boolean): Change[A] = if (p(this)) this else Change(before, before)
 }
