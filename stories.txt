@@ -4,6 +4,7 @@ Todo
 - pre-filter changes from shared
 
 Done
++ Added Shared.alter
 + Added Change.filter
 + Added Callback.filter
 + Added Change[Int].delta

@@ -69,8 +69,9 @@ trait Shared[A] extends Reader[A] {
   def onChange(callback: Change[A] => Unit): this.type = onChange(Callback(callback))
   def onChange(callback: Callback[A]): this.type
 
-  def update(action: A => Unit): Change[A] = modify((a: A) => {action(a); a})
-  def modify(f: A => A): Change[A]
+  def update(action: A => Unit): Change[A] = alter((a: A) => {action(a); Change(a, a)})
+  def modify(f: A => A): Change[A] = alter((a: A) => Change(a, f(a)))
+  def alter(f: A => Change[A]): Change[A]
 
   def lens[B](lens: Lens[A, B]): Shared[B]           = LensShared[A, B](this, lens)
   def transform(f: A => A): Shared[A]                = xmap[A](f, identity[A])
@@ -86,11 +87,11 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   def get(): A = lock.withRead(value)
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
-  def modify(f: A => A): Change[A] = callbacks.apply(lock.withWrite {
-    val oldA = value
-    value = f(oldA)
+  def alter(f: A => Change[A]): Change[A] = callbacks.apply(lock.withWrite {
+    val change = f(value)
+    value = change.after
 
-    Change(oldA, value)
+    change
   })
 
   private val callbacks: Callbacks[A] = new Callbacks[A]
@@ -99,14 +100,14 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
 case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
   def get(): B = aToB(sa.get())
   def onChange(callbackB: Callback[B]): this.type = {sa.onChange(callbackB.contramap(aToB)); this}
-  def modify(f: B => B): Change[B] = sa.modify(aToB andThen f andThen bToA).map(aToB)
+  def alter(f: B => Change[B]): Change[B] = sa.alter((a: A) => f(aToB(a)).map(bToA)).map(aToB)
   def lock = sa.lock
 }
 
 case class LensShared[A, B](sa: Shared[A], lens: Lens[A, B]) extends Shared[B] {
   def get(): B = lens.get(sa.get())
   def onChange(callbackB: Callback[B]): this.type = {sa.onChange(callbackB.contramap(lens.get)); this}
-  def modify(f: B => B): Change[B] = sa.modify(lens.mod(f, _)).map(lens.get)
+  def alter(f: B => Change[B]): Change[B] = sa.alter((a: A) => lens.modf(f, a)).map(lens.get)
   def lock = sa.lock
 }
 
@@ -121,16 +122,16 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
     this
   }
 
-  def modify(f: ((A, B)) => (A, B)): Change[(A, B)] = callbacks.apply(lock.withWrite {
+  def alter(f: ((A, B)) => Change[(A, B)]): Change[(A, B)] = callbacks.apply(lock.withWrite {
     val oldAB@(oldA, oldB) = (sa.get(), sb.get())
-    val newAB@(newA, newB) = f(oldA, oldB)
+    val change = f(oldAB)
 
     allowCallback.modify(_ => false)
-    sa.modify(_ => newA)
-    sb.modify(_ => newB)
+    sa.modify(_ => change.after._1)
+    sb.modify(_ => change.after._2)
     allowCallback.modify(_ => true)
 
-    Change(oldAB, newAB)
+    change
   })
 
   val lock = new ZippedLock(sa.lock, sb.lock)

@@ -52,6 +52,6 @@ class SharedLock(value: Shared[Lock] = Shared(Synchronized())) extends Lock with
 
   def get(): Lock = value.get()
   def lock: Lock = value.lock
-  def modify(f: Lock => Lock): Change[Lock] = value.modify(f)
+  def alter(f: Lock => Change[Lock]): Change[Lock] = value.alter(f)
   def onChange(callback: Callback[Lock]) = { value.onChange(callback); this }
 }
