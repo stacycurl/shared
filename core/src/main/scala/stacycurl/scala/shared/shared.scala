@@ -75,6 +75,10 @@ trait Shared[A] extends Reader[A] {
   def onChange(callback: Change[A] => Unit): this.type = onChange(Callback(callback))
   def onChange(callback: Callback[A]): this.type
 
+  def value: A = get()
+  def value_=(a: A): Change[A] = set(a)
+  def set(a: A): Change[A] = modify(_ => a)
+
   def update(action: A => Unit): Change[A] = alter((a: A) => {action(a); new Unchanged(a)})
   def modify(f: A => A): Change[A] = alter((a: A) => Change(a, f(a)))
   def alter(f: A => Change[A]): Change[A]
@@ -89,13 +93,13 @@ trait Shared[A] extends Reader[A] {
 }
 
 case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
-  private var value = initial
+  private var current = initial
 
-  def get(): A = lock.withRead(value)
+  def get(): A = lock.withRead(current)
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
   def alter(f: A => Change[A]): Change[A] =
-    callbacks.apply(lock.withWrite(f(value).notify(change => value = change.after)))
+    callbacks.apply(lock.withWrite(f(value).notify(change => current = change.after)))
 
   private val callbacks: Callbacks[A] = new Callbacks[A]
 }

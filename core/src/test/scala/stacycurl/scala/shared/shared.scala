@@ -36,6 +36,17 @@ class SharedTests {
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
   }
 
+  @Test def canSet {
+    val shared = Shared(1)
+    shared.value = 2
+
+    assertEquals(2, shared.get())
+
+    shared.set(3)
+
+    assertEquals(3, shared.get())
+  }
+
   @Test def updateIsModifyWithActions {
     val boolean = Shared(new AtomicInteger(1)) // perverse but just want an example
 
