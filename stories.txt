@@ -4,6 +4,7 @@ Todo
 - pre-filter changes from shared
 
 Done
++ Shared.changes can take filter
 + Added Shared.filter
 + Added Shared.alter
 + Added Change.filter

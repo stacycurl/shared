@@ -62,12 +62,14 @@ trait Shared[A] extends Reader[A] {
     recurse()
   }
 
-  def changes: Changes[A] = {
+  def changes(p: Change[A] => Boolean = null): Changes[A] = {
     val result = Shared[List[Change[A]]](Nil)
 
     onChange(result += _)
 
-    Changes[A](result)
+    val changes = Changes[A](result)
+
+    if (p == null) changes else changes.filter(p)
   }
 
   def onChange(callback: Change[A] => Unit): this.type = onChange(Callback(callback))

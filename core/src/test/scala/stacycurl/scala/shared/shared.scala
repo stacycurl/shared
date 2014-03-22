@@ -87,7 +87,7 @@ class SharedTests {
   @Test def canFilter {
     val int = Shared(1)
     val bigInt = int.filter(ci => math.abs(ci.delta) > 1)
-    val bigIntChanges = bigInt.changes
+    val bigIntChanges = bigInt.changes()
 
     // The filter cannot constrain the original
     int += 1
@@ -189,7 +189,7 @@ class SharedTests {
 
   @Test def canNotifyOnChange {
     val int = Shared(1)
-    val intChanges = int.changes
+    val intChanges = int.changes()
 
     assertEquals(Nil, intChanges.get())
 
@@ -198,12 +198,21 @@ class SharedTests {
     assertEquals(Change.many(1, 2), intChanges.get())
   }
 
+  @Test def canFilterChanges {
+    val int = Shared(1)
+    val bigChanges = int.changes(ci => math.abs(ci.delta) > 1)
+
+    List(2, 10, 11, 9, 7, 2, 1).foreach(i => int.modify(_ => i))
+
+    assertEquals(Changes.many(1, 10, 7, 2).get(), bigChanges.get())
+  }
+
   @Test def xmappedSharedCanNotifyOnChange {
     val int    = Shared(1)
     val double = int.xmap[Double](_.toDouble, _.toInt)
 
-    val intChanges    = int.changes
-    val doubleChanges = double.changes
+    val intChanges    = int.changes()
+    val doubleChanges = double.changes()
 
     assertEquals(Nil, doubleChanges.get())
 
@@ -222,8 +231,8 @@ class SharedTests {
     val tuple  = Shared(("one", 1))
     val string = tuple.lens(first)
 
-    val tupleChanges  = tuple.changes
-    val stringChanges = string.changes
+    val tupleChanges  = tuple.changes()
+    val stringChanges = string.changes()
 
     assertEquals(Nil, stringChanges.get())
 
@@ -243,9 +252,9 @@ class SharedTests {
     val string = Shared("one")
     val tuple  = int.zip(string)
 
-    val intChanges    = int.changes
-    val stringChanges = string.changes
-    val tupleChanges  = tuple.changes
+    val intChanges    = int.changes()
+    val stringChanges = string.changes()
+    val tupleChanges  = tuple.changes()
 
     assertEquals(Nil, tupleChanges.get())
 
@@ -266,7 +275,7 @@ class SharedTests {
 
   @Test def canClearChanges {
     val int = Shared(1)
-    val changes = int.changes
+    val changes = int.changes()
 
     int.modify(_ => 2)
 
