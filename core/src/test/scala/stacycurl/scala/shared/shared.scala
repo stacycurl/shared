@@ -241,7 +241,7 @@ class SharedTests {
 
     assertEquals(1, doneAwaiting.getCount())
 
-    string.modify(_ => "bar"); Thread.sleep(500)
+    string.value = "bar"; Thread.sleep(500)
 
     assertEquals(0, doneAwaiting.getCount())
   }
@@ -258,7 +258,7 @@ class SharedTests {
 
     assertEquals(Nil, intChanges.get())
 
-    int.modify(_ => 2)
+    int.value = 2
 
     assertEquals(Change.many(1, 2), intChanges.get())
   }
@@ -267,7 +267,7 @@ class SharedTests {
     val int = Shared(1)
     val bigChanges = int.changes(ci => math.abs(ci.delta) > 1)
 
-    List(2, 10, 11, 9, 7, 2, 1).foreach(i => int.modify(_ => i))
+    List(2, 10, 11, 9, 7, 2, 1).foreach(int.value = _)
 
     assertEquals(Changes.many(1, 10, 7, 2).get(), bigChanges.get())
   }
@@ -281,12 +281,12 @@ class SharedTests {
 
     assertEquals(Nil, doubleChanges.get())
 
-    int.modify(_ => 2)
+    int.value = 2
 
     assertEquals(Change.many(1, 2),     intChanges.get())
     assertEquals(Change.many(1.0, 2.0), doubleChanges.get())
 
-    double.modify(_ => 3.0)
+    double.value = 3.0
 
     assertEquals(Change.many(1, 2, 3),       intChanges.get())
     assertEquals(Change.many(1.0, 2.0, 3.0), doubleChanges.get())
@@ -301,12 +301,12 @@ class SharedTests {
 
     assertEquals(Nil, stringChanges.get())
 
-    tuple.modify(_ => ("two", 2))
+    tuple.value = ("two", 2)
 
     assertEquals(Change.many(("one", 1), ("two", 2)), tupleChanges.get())
     assertEquals(Change.many("one", "two"),           stringChanges.get())
 
-    string.modify(_ => "three")
+    string.value = "three"
 
     assertEquals(Change.many(("one", 1), ("two", 2), ("three", 2)), tupleChanges.get())
     assertEquals(Change.many("one", "two", "three"),                stringChanges.get())
@@ -323,15 +323,15 @@ class SharedTests {
 
     assertEquals(Nil, tupleChanges.get())
 
-    int.modify(_ => 2)
+    int.value = 2
 
     assertEquals(Change.many((1, "one"), (2, "one")), tupleChanges.get())
 
-    string.modify(_ => "two")
+    string.value = "two"
 
     assertEquals(Change.many((1, "one"), (2, "one"), (2, "two")), tupleChanges.get())
 
-    tuple.modify(_ => (3, "three"))
+    tuple.value = (3, "three")
 
     assertEquals(Change.many(1, 2, 3),                                          intChanges.get())
     assertEquals(Change.many("one", "two", "three"),                            stringChanges.get())
@@ -342,7 +342,7 @@ class SharedTests {
     val int = Shared(1)
     val changes = int.changes()
 
-    int.modify(_ => 2)
+    int.value = 2
 
     assertEquals(Change.many(1, 2), changes.get())
 

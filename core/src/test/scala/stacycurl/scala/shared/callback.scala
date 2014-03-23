@@ -18,7 +18,7 @@ class CallbackTests {
     guarded(Change(1, 2))
     assertEquals(Nil, intChanges.get())
 
-    guard.modify(_ => true)
+    guard.value = true
 
     guarded(Change(1, 2))
     assertEquals(List(Change(1, 2)), intChanges.get())

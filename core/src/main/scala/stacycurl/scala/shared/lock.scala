@@ -26,12 +26,8 @@ case class ReadWriteLock(lock: JRWLock = new JRRWLock()) extends Lock {
   def withRead[A](f: => A): A  = withLock(lock.readLock(), f)
   def withWrite[A](f: => A): A = withLock(lock.writeLock(), f)
 
-  private def withLock[A](lock: JLock, f: => A): A = try {
-    lock.lock(); f
-  }
-  finally {
-    lock.unlock()
-  }
+  private def withLock[A](lock: JLock, f: => A): A =
+    try { lock.lock(); f } finally { lock.unlock() }
 }
 
 case object Unlocked extends Lock {

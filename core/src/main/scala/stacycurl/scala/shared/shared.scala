@@ -12,7 +12,6 @@ object Shared {
 
   implicit object SharedInstance extends InvariantFunctor[Shared] with Unzip[Shared] with Zip[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
-
     def zip[A, B](sa: => Shared[A], sb: => Shared[B]): Shared[(A, B)] = sa.zip(sb)
 
     def unzip[A, B](sab: Shared[(A, B)]): (Shared[A], Shared[B]) =
@@ -26,22 +25,20 @@ object Shared {
     def +=(a: A)(implicit N: Numeric[A]) = sa.modify(N.plus(_, a))
     def -=(a: A)(implicit N: Numeric[A]) = sa.modify(N.minus(_, a))
     def *=(a: A)(implicit N: Numeric[A]) = sa.modify(N.times(_, a))
-
     def /=(a: A)(implicit F: Fractional[A]) = sa.modify(F.div(_, a))
-
     def append(a: A)(implicit S: Semigroup[A]) = sa.modify(S.append(_, a))
-    def clear()(implicit M: Monoid[A]) = sa.set(M.zero)
+    def clear()(implicit M: Monoid[A]): Shared[A] = { sa.value = M.zero; sa }
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
     def +=(a: A): this.type = { list.modify(_ :+ a); this }
-    def clear(): Unit       = list.modify(_ => Nil)
+    def clear(): Unit       = list.value = Nil
     def result(): List[A]   = list.get()
   }
 
   implicit class SharedMap[K, V](map: Shared[Map[K, V]]) extends Builder[(K, V), Map[K, V]] {
     def +=(kv: (K, V))      = { map.modify(_ + kv); this }
-    def clear(): Unit       = map.modify(_ => Map.empty[K, V])
+    def clear(): Unit       = map.value = Map.empty[K, V]
     def result(): Map[K, V] = map.get()
   }
 
@@ -56,19 +53,17 @@ trait Shared[A] extends Reader[A] {
   def await(p: A => Boolean, timeoutMillis: Long = 0): Option[A] = {
     val (start, minSleep) = (System.currentTimeMillis(), 100)
 
-    @tailrec def recurse(): Option[A] = {
-      val value = get()
-
+    @tailrec def recurse(value: A): Option[A] = {
       val remainingTime =
         if (timeoutMillis == 0) minSleep else timeoutMillis - (System.currentTimeMillis() - start)
 
       if (p(value)) Some(value) else if (remainingTime <= 0) None else {
         Thread.sleep(math.min(minSleep, remainingTime))
-        recurse()
+        recurse(get())
       }
     }
 
-    recurse()
+    recurse(get())
   }
 
   def changes(p: Change[A] => Boolean = null): Changes[A] = {
@@ -108,14 +103,13 @@ trait Shared[A] extends Reader[A] {
 }
 
 case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
-  private var current = initial
-
   def get(): A = lock.withRead(current)
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
   def alter(f: A => Change[A]): Change[A] =
     callbacks.apply(lock.withWrite(f(value).perform(change => current = change.after)))
 
+  private var current = initial
   private val callbacks: Callbacks[A] = new Callbacks[A]
 }
 
@@ -153,7 +147,7 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
 
   def alter(f: ((A, B)) => Change[(A, B)]): Change[(A, B)] = callbacks.apply(lock.withWrite {
     f((sa.get(), sb.get())).perform(change => allowCallback.withValue(false) {
-      sa.modify(_ => change.after._1); sb.modify(_ => change.after._2)
+      sa.value = change.after._1; sb.value = change.after._2
     })
   })
 

@@ -23,6 +23,5 @@ case class Modify[A](f: A => A) extends (A => A) {
 }
 
 object Update {
-  def apply[A](action: A => Unit): Modify[A] =
-    new Modify[A]((a: A) => {action(a); a})
+  def apply[A](action: A => Unit): Modify[A] = new Modify[A]((a: A) => {action(a); a})
 }

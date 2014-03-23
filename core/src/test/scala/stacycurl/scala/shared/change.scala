@@ -50,7 +50,7 @@ class ChangeTests {
     assertEquals(Change(2, 1), change.revert(int))
     assertEquals(1, int.get())
 
-    int.modify(_ => 10)
+    int.value = 10
 
     // The revert of a change isn't simply its inverse, as subsequent changes may have happened
     assertEquals(Change(10, 1), change.revert(int))
@@ -62,7 +62,7 @@ class ChangeTests {
     assertEquals(1, int.get())
 
     // Even if there's been a subsequent change
-    int.modify(_ => 100)
+    int.value = 100
     assertEquals(unchanged, unchanged.revert(int))
     assertEquals(100, int.get())
   }
