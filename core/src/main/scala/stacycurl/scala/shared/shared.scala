@@ -87,6 +87,12 @@ trait Shared[A] extends Reader[A] {
   def value_=(a: A): Change[A] = set(a)
   def set(a: A): Change[A] = modify(_ => a)
 
+  def withValue[B](a: A)(action: => B): B = {
+    val change = set(a)
+
+    try { action } finally { set(change.before) }
+  }
+
   def update(action: A => Unit): Change[A] = alter((a: A) => {action(a); new Unchanged(a)})
   def modify(f: A => A): Change[A] = alter((a: A) => Change(a, f(a)))
   def alter(f: A => Change[A]): Change[A]
@@ -145,11 +151,8 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   }
 
   def alter(f: ((A, B)) => Change[(A, B)]): Change[(A, B)] = callbacks.apply(lock.withWrite {
-    f((sa.get(), sb.get())).notify(change => {
-      allowCallback.modify(_ => false)
-      sa.modify(_ => change.after._1)
-      sb.modify(_ => change.after._2)
-      allowCallback.modify(_ => true)
+    f((sa.get(), sb.get())).notify(change => allowCallback.withValue(false) {
+      sa.modify(_ => change.after._1); sb.modify(_ => change.after._2)
     })
   })
 

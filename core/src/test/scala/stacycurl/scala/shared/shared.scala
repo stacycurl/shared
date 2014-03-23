@@ -47,6 +47,17 @@ class SharedTests {
     assertEquals(3, shared.get())
   }
 
+  @Test def withValueTemporarilySetsValue {
+    val int = Shared(1)
+
+    val result = int.withValue(2) {
+      int.get() + 10
+    }
+
+    assertEquals(12, result)
+    assertEquals(1, int.get())
+  }
+
   @Test def updateIsModifyWithActions {
     val boolean = Shared(new AtomicInteger(1)) // perverse but just want an example
 

@@ -4,6 +4,7 @@ Todo
 - pre-filter changes from shared
 
 Done
++ Added Shared.withValue
 + SharedMap extends Builder[(K, V), Map[K, V]]
 + Added Reader.unchanged
 + Added Shared.append for Semigroup
