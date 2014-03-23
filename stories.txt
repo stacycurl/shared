@@ -4,6 +4,7 @@ Todo
 - pre-filter changes from shared
 
 Done
++ Added Shared.clear() for Monoid
 + Added Change.revert
 + Added Change.fold
 + Added Shared.withValue

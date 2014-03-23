@@ -30,6 +30,7 @@ object Shared {
     def /=(a: A)(implicit F: Fractional[A]) = sa.modify(F.div(_, a))
 
     def append(a: A)(implicit S: Semigroup[A]) = sa.modify(S.append(_, a))
+    def clear()(implicit M: Monoid[A]) = sa.set(M.zero)
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {

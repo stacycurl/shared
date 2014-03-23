@@ -181,6 +181,15 @@ class SharedTests {
     assertEquals(List(1, 2, 3, 3, 5, 6), changes.values())
   }
 
+  @Test def sharedMonoid {
+    implicit val minIntMonoid = Monoid.instance[Int]((l, r) => math.min(l, r), Int.MaxValue)
+    val int = Shared(1)
+
+    int.clear()
+
+    assertEquals(Int.MaxValue, int.get())
+  }
+
   @Test def canGetSortedViewOfAnySeq {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
