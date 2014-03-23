@@ -23,7 +23,7 @@ trait Callback[A] extends (Change[A] => Change[A]) {
 }
 
 case class SingleCallback[A](value: Change[A] => Unit) extends Callback[A] {
-  def apply(change: Change[A]): Change[A] = change.notify(value)
+  def apply(change: Change[A]): Change[A] = change.perform(value)
 }
 
 class Callbacks[A] extends Callback[A] {

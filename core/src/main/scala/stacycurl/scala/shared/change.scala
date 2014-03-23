@@ -28,24 +28,28 @@ object Change {
   }
 
   implicit class ChangeOps[A](change: Change[A]) {
-    // Can't define this in Change due its contravariance
-    def join(other: Change[A]): Change[A] = Change[A](change.before, other.after)
     def delta(implicit ev: A =:= Int): Int = change.after - change.before
-    def revert(sa: Shared[A]): Change[A] = change.fold(_ => change)(ca => sa.set(ca.before))
+
+    def join(other: Change[A]): Change[A] =
+      change.fold[Change[A]](ua => other)(ca => Change[A](ca.before, other.after))
+
+    def map[B](f: A => B): Change[B] =
+      change.fold[Change[B]](ua => new Unchanged(f(ua.value)))(ca => Change[B](f(ca.before), f(ca.after)))
+
+    def revert(sa: Shared[A]): Change[A] = ifChanged(ca => sa.set(ca.before))
+    def filter(p: Change[A] => Boolean): Change[A] = ifChanged(ca => if (p(ca)) ca else new Unchanged(ca.before))
+    def perform(action: Change[A] => Unit): Change[A] = ifChanged(ca => { action(ca); ca })
+    def ifChanged(f: Change[A] => Change[A]): Change[A] = change.fold[Change[A]](ua => ua)(f)
   }
 }
 
 case class Change[+A](before: A, after: A) {
   def calc[B](g: (A, A) => B) = g(before, after)
-  def map[B](f: A => B): Change[B] = Change[B](f(before), f(after))
   def flatMap[B](f: A => Change[B]): Change[B] = f(after)
   def zip[B](cb: Change[B]): Change[(A, B)] = Change((before, cb.before), (after, cb.after))
-  def filter(p: Change[A] => Boolean): Change[A] = if (p(this)) this else new Unchanged(before)
-  def notify(action: Change[A] => Unit): this.type = { action(this); this }
-  def fold[B](unchanged: A => B)(changed: Change[A] => B): B = changed(this)
+  def fold[B](unchanged: Unchanged[A] => B)(changed: Change[A] => B): B = changed(this)
 }
 
-class Unchanged[A](value: A) extends Change[A](value, value){
-  override def notify(action: Change[A] => Unit): this.type = this
-  override def fold[B](unchanged: A => B)(changed: Change[A] => B): B = unchanged(value)
+class Unchanged[+A](val value: A) extends Change[A](value, value){
+  override def fold[B](unchanged: Unchanged[A] => B)(changed: Change[A] => B): B = unchanged(this)
 }

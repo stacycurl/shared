@@ -38,7 +38,7 @@ class ChangeTests {
 
   @Test def canFold {
     assertEquals(3, Change(1, 2).fold(_ => 10)(ci => (ci.before + ci.after)))
-    assertEquals(3, new Unchanged(3).fold(i => i)(ci => 10))
+    assertEquals(3, new Unchanged(3).fold(ui => ui.value)(ci => 10))
   }
 
   @Test def canRevert {

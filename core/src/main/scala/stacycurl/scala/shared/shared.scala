@@ -113,7 +113,7 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
   def alter(f: A => Change[A]): Change[A] =
-    callbacks.apply(lock.withWrite(f(value).notify(change => current = change.after)))
+    callbacks.apply(lock.withWrite(f(value).perform(change => current = change.after)))
 
   private val callbacks: Callbacks[A] = new Callbacks[A]
 }
@@ -151,7 +151,7 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   }
 
   def alter(f: ((A, B)) => Change[(A, B)]): Change[(A, B)] = callbacks.apply(lock.withWrite {
-    f((sa.get(), sb.get())).notify(change => allowCallback.withValue(false) {
+    f((sa.get(), sb.get())).perform(change => allowCallback.withValue(false) {
       sa.modify(_ => change.after._1); sb.modify(_ => change.after._2)
     })
   })
