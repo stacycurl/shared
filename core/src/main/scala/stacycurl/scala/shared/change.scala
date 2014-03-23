@@ -41,8 +41,10 @@ case class Change[+A](before: A, after: A) {
   def zip[B](cb: Change[B]): Change[(A, B)] = Change((before, cb.before), (after, cb.after))
   def filter(p: Change[A] => Boolean): Change[A] = if (p(this)) this else new Unchanged(before)
   def notify(action: Change[A] => Unit): this.type = { action(this); this }
+  def fold[B](unchanged: A => B)(changed: Change[A] => B): B = changed(this)
 }
 
 class Unchanged[A](value: A) extends Change[A](value, value){
   override def notify(action: Change[A] => Unit): this.type = this
+  override def fold[B](unchanged: A => B)(changed: Change[A] => B): B = unchanged(value)
 }

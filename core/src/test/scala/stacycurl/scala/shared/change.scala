@@ -35,4 +35,9 @@ class ChangeTests {
     assertEquals(Change(1, 1), Change(1, 2).filter(_.delta > 1))
     assertEquals(Change(1, 3), Change(1, 3).filter(_.delta > 1))
   }
+
+  @Test def canFold {
+    assertEquals(3, Change(1, 2).fold(_ => 10)(ci => (ci.before + ci.after)))
+    assertEquals(3, new Unchanged(3).fold(i => i)(ci => 10))
+  }
 }
