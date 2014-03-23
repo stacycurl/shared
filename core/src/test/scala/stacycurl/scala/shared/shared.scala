@@ -119,21 +119,23 @@ class SharedTests {
 
     list += "new"
 
-    assertEquals(List("initial", "new"), list.get())
+    assertEquals(List("initial", "new"), list.result())
 
     list.clear()
 
     assertEquals(Nil, list.get())
   }
 
-  @Test def sharedMapBehavesListMapBuilder {
+  @Test def sharedMapBehavesLikeMapBuilder {
     val map: Shared[Map[Int, String]] = Shared(Map(1 -> "one"))
 
     map += (2 -> "two")
 
-    assertEquals(Map(1 -> "one", 2 -> "two"), map.get())
+    assertEquals(Map(1 -> "one", 2 -> "two"), map.result())
     assertEquals(Some("one"), map.get(1))
     assertEquals(None, map.get(3))
+    map.clear()
+    assertEquals(Map.empty[Int, String], map.result())
   }
 
   @Test def sharedNumeric {

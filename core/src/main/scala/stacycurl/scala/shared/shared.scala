@@ -38,8 +38,10 @@ object Shared {
     def result(): List[A]   = list.get()
   }
 
-  implicit class SharedMap[K, V](map: Shared[Map[K, V]]) {
-    def +=(kv: (K, V)) = map.modify(_ + kv)
+  implicit class SharedMap[K, V](map: Shared[Map[K, V]]) extends Builder[(K, V), Map[K, V]] {
+    def +=(kv: (K, V))      = { map.modify(_ + kv); this }
+    def clear(): Unit       = map.modify(_ => Map.empty[K, V])
+    def result(): Map[K, V] = map.get()
   }
 
   implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
