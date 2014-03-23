@@ -4,6 +4,7 @@ Todo
 - pre-filter changes from shared
 
 Done
++ Added Reader.unchanged
 + Added Shared.append for Semigroup
 + Added Shared./= for Fractional
 + Added Shared.{+=, -=, *=} for Numeric

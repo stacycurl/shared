@@ -4,7 +4,7 @@ import scalaz._
 
 
 object Change {
-  def point[A](a: A): Change[A] = Change[A](a, a)
+  def point[A](a: A): Change[A] = new Unchanged[A](a)
   def many[A](as: A*): List[Change[A]] = if (as.isEmpty) Nil else as.zip(as.tail).map(tuple).toList
   def tuple[A](beforeAfter: (A, A)): Change[A] = Change(beforeAfter._1, beforeAfter._2)
 

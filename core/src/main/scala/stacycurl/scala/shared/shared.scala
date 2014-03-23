@@ -43,9 +43,9 @@ object Shared {
   }
 
   implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
-    def sortBy[B](f: A => B)(implicit ordering: scala.Ordering[B]): Shared[CC[A]] = seqLike.transform(_.sortBy(f))
+    def sortBy[B: scala.Ordering](f: A => B): Shared[CC[A]] = seqLike.transform(_.sortBy(f))
     def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] = seqLike.transform(_.sortWith(lt))
-    def sorted[B >: A](implicit ordering: scala.Ordering[B]): Shared[CC[A]] = seqLike.transform(_.sorted[B])
+    def sorted[B >: A : scala.Ordering]: Shared[CC[A]] = seqLike.transform(_.sorted[B])
   }
 }
 
@@ -137,8 +137,8 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   def onChange(callbackAB: Callback[(A, B)]): this.type = {
     callbacks += callbackAB
     val guardedCallback = callbackAB.guard(allowCallback)
-    sa.onChange((changeA: Change[A]) => guardedCallback(changeA.zip(Change.point(sb.get()))))
-    sb.onChange((changeB: Change[B]) => guardedCallback(Change.point(sa.get()).zip(changeB)))
+    sa.onChange((changeA: Change[A]) => guardedCallback(changeA.zip(sb.unchanged())))
+    sb.onChange((changeB: Change[B]) => guardedCallback(sa.unchanged().zip(changeB)))
     this
   }
 

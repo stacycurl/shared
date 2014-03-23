@@ -34,6 +34,7 @@ object Reader {
 
 trait Reader[+A] extends (() => A) {
   def apply(): A = get()
+  def unchanged(): Change[A] = new Unchanged[A](get())
   def get(): A
   def map[B](f: A => B): Reader[B] = MappedReader(this, f)
   def zip[B](rb: Reader[B]): Reader[(A, B)] = ZippedReader[A, B](this, rb)
