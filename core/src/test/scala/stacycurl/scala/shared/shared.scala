@@ -5,9 +5,9 @@ import org.junit.Test
 import scala.collection.immutable.Stack
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
+import scalaz._
 
 import org.junit.Assert._
-import scalaz._
 
 
 class SharedTests {
@@ -134,6 +134,17 @@ class SharedTests {
     assertEquals(Map(1 -> "one", 2 -> "two"), map.get())
     assertEquals(Some("one"), map.get(1))
     assertEquals(None, map.get(3))
+  }
+
+  @Test def sharedNumeric {
+    val si = Shared(1)
+    val changes = si.changes()
+
+    si += 1
+    si *= 3
+    si -= 1
+
+    assertEquals(List(1, 2, 6, 5), changes.values())
   }
 
   @Test def canGetSortedViewOfAnySeq {

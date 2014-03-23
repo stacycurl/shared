@@ -23,7 +23,9 @@ object Shared {
     Show.show[Shared[A]]((sa: Shared[A]) => Show[A].show(sa.get()))
 
   implicit class SharedOps[A](sa: Shared[A]) {
-    def +=(delta: Int)(implicit aIsInt: A =:= Int, intIsA: Int =:= A) = sa.modify(_ + delta)
+    def +=(a: A)(implicit N: Numeric[A]) = sa.modify(N.plus(_, a))
+    def -=(a: A)(implicit N: Numeric[A]) = sa.modify(N.minus(_, a))
+    def *=(a: A)(implicit N: Numeric[A]) = sa.modify(N.times(_, a))
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
