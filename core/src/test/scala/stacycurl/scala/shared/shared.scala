@@ -147,6 +147,14 @@ class SharedTests {
     assertEquals(List(1, 2, 6, 5), changes.values())
   }
 
+  @Test def sharedFractional {
+    val si = Shared(6.0)
+
+    si /= 3.0
+
+    assertEquals(2.0, si.get(), 1e-6)
+  }
+
   @Test def canGetSortedViewOfAnySeq {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))

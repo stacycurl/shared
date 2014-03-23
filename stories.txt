@@ -4,6 +4,7 @@ Todo
 - pre-filter changes from shared
 
 Done
++ Added Shared./= for Fractional
 + Added Shared.{+=, -=, *=} for Numeric
 + Added Shared.value_= Shared.value & Shared.set
 + Shared.changes can take filter
