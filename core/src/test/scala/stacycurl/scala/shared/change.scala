@@ -40,4 +40,30 @@ class ChangeTests {
     assertEquals(3, Change(1, 2).fold(_ => 10)(ci => (ci.before + ci.after)))
     assertEquals(3, new Unchanged(3).fold(i => i)(ci => 10))
   }
+
+  @Test def canRevert {
+    val int = Shared(1)
+
+    val change = int.modify(_ + 1)
+    assertEquals(2, int.get())
+
+    assertEquals(Change(2, 1), change.revert(int))
+    assertEquals(1, int.get())
+
+    int.modify(_ => 10)
+
+    // The revert of a change isn't simply its inverse, as subsequent changes may have happened
+    assertEquals(Change(10, 1), change.revert(int))
+    assertEquals(1, int.get())
+
+    // Reverting Unchanged does nothing
+    val unchanged = int.alter(i => new Unchanged(i))
+    assertEquals(unchanged, unchanged.revert(int))
+    assertEquals(1, int.get())
+
+    // Even if there's been a subsequent change
+    int.modify(_ => 100)
+    assertEquals(unchanged, unchanged.revert(int))
+    assertEquals(100, int.get())
+  }
 }

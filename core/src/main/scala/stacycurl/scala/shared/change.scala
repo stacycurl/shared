@@ -31,6 +31,7 @@ object Change {
     // Can't define this in Change due its contravariance
     def join(other: Change[A]): Change[A] = Change[A](change.before, other.after)
     def delta(implicit ev: A =:= Int): Int = change.after - change.before
+    def revert(sa: Shared[A]): Change[A] = change.fold(_ => change)(ca => sa.set(ca.before))
   }
 }
 
