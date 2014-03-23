@@ -28,6 +28,8 @@ object Shared {
     def *=(a: A)(implicit N: Numeric[A]) = sa.modify(N.times(_, a))
 
     def /=(a: A)(implicit F: Fractional[A]) = sa.modify(F.div(_, a))
+
+    def append(a: A)(implicit S: Semigroup[A]) = sa.modify(S.append(_, a))
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {

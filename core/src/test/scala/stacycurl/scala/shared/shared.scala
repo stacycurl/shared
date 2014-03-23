@@ -155,6 +155,19 @@ class SharedTests {
     assertEquals(2.0, si.get(), 1e-6)
   }
 
+  @Test def sharedSemigroup {
+    val maxInt = Shared[Int](1)
+    val changes = maxInt.changes()
+
+    implicit val maxIntSemigroup = Semigroup.instance[Int] {
+      case (l, r) => math.max(l, r)
+    }
+
+    List(2, 3, 1, 5, 6).foreach(i => maxInt.append(i))
+
+    assertEquals(List(1, 2, 3, 3, 5, 6), changes.values())
+  }
+
   @Test def canGetSortedViewOfAnySeq {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
