@@ -28,6 +28,11 @@ object Reader {
     override def map[A, B](ra: Reader[A])(f: A => B): Reader[B] = ra.map(f)
   }
 
+  implicit object ReaderRepresentable extends Representable[Reader, Unit] {
+    def rep[A](f: Unit => A): Reader[A] = FunctionReader[A](() => f())
+    def unrep[A](ra: Reader[A]): Unit => A = u => ra.get()
+  }
+
   implicit def readerShow[A: Show]: Show[Reader[A]] =
     Show.show[Reader[A]]((ra: Reader[A]) => Show[A].show(ra.get()))
 }
