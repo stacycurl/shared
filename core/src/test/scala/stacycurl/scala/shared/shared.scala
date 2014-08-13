@@ -20,20 +20,33 @@ class SharedTests {
       Shared("initial").modify(_ ++ " >> modified"))
   }
 
-  @Test def modifyIsThreadSafe {
+  @Test(timeout = 1000) def modifyIsThreadSafe {
     val shared = Shared("initial")
 
-    val modifiers = {
-      val prefixers = threads(10, shared.modify("<" ++ _))
-      val suffixers = threads(10, shared.modify(_ ++ ">"))
-
-      Random.shuffle(prefixers ++ suffixers)
-    }
+    val modifiers = Random.shuffle(
+      threads(10, shared.modify("<" ++ _)) ++ threads(10, shared.modify(_ ++ ">"))
+    )
 
     modifiers.foreach(_.start())
     modifiers.foreach(_.join())
 
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
+  }
+
+  @Test(timeout = 1000) def zippedLockIsThreadSafe {
+    val (left, right) = (Shared(0), Shared(""))
+    val (lr, rl)      = (left.zip(right), right.zip(left))
+
+    val modifiers = Random.shuffle(
+      threads(10, lr.modify { case (i, s) => (i + 1, s) }) ++
+      threads(10, rl.modify { case (s, i) => (s + ">", i) })
+    )
+
+    modifiers.foreach(_.start())
+    modifiers.foreach(_.join())
+
+    assertEquals(10, left.get())
+    assertEquals(">>>>>>>>>>", right.get())
   }
 
   @Test def canSet {

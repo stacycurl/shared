@@ -36,7 +36,10 @@ case object Unlocked extends Lock {
   override def zip(other: Lock): Lock = other
 }
 
-class ZippedLock(left: Lock, right: Lock) extends Lock {
+class ZippedLock(left0: Lock, right0: Lock) extends Lock {
+  private val (left, right) = 
+    if (System.identityHashCode(left0) < System.identityHashCode(right0)) (left0, right0) else (right0, left0)
+
   def withRead[A](f: => A): A  = left.withRead(right.withRead(f))
   def withWrite[A](f: => A): A = left.withWrite(right.withWrite(f))
 }
