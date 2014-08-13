@@ -34,12 +34,12 @@ class SharedTests {
   }
 
   @Test(timeout = 1000) def zippedLockIsThreadSafe {
-    val (left, right) = (Shared(0), Shared(""))
-    val (lr, rl)      = (left.zip(right), right.zip(left))
+    val (left, middle, right) = (Shared(0), Shared(0.0), Shared(""))
+    val (lmr, rml) = (left.zip(middle).zip(right), right.zip(middle).zip(left))
 
     val modifiers = Random.shuffle(
-      threads(10, lr.modify { case (i, s) => (i + 1, s) }) ++
-      threads(10, rl.modify { case (s, i) => (s + ">", i) })
+      threads(10, lmr.modify { case ((i, d), s) => ((i + 1,   d), s) }) ++
+      threads(10, rml.modify { case ((s, d), i) => ((s + ">", d), i) })
     )
 
     modifiers.foreach(_.start())
