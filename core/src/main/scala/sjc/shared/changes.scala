@@ -1,4 +1,4 @@
-package stacycurl.scala.shared
+package sjc.shared
 
 import scalaz._
 import scalaz.std.list._

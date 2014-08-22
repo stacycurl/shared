@@ -1,4 +1,4 @@
-package stacycurl.scala.shared
+package sjc.shared
 
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test

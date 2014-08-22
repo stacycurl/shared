@@ -1,4 +1,4 @@
-package stacycurl.scala.shared
+package sjc.shared
 
 import scala.annotation.tailrec
 import scala.collection.SeqLike

@@ -1,4 +1,4 @@
-package stacycurl.scala.shared
+package sjc.shared
 
 import java.util.concurrent.locks.{ Lock => JLock, ReadWriteLock => JRWLock, ReentrantReadWriteLock => JRRWLock }
 import scalaz._

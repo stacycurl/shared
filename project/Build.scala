@@ -45,7 +45,7 @@ object SharedBuild extends Build {
             "org.scalaz" % "scalaz-core_2.10" % "7.1.0"
         )},
 
-        initialCommands in console := """import stacycurl.scala.shared._""",
+        initialCommands in console := """import sjc.shared._""",
 
         mappings in (Compile, packageSrc) <++=
           (sourceManaged in Compile, managedSources in Compile) map { (base, srcs) =>
@@ -109,7 +109,7 @@ object SharedBuild extends Build {
 
   def commonSettings = Defaults.defaultSettings ++
     Seq(
-      organization        := "stacycurl.scala",
+      organization        := "com.github.stacycurl",
       scalaVersion        := "2.10.3",
       scalaBinaryVersion  := "2.10.3",
 

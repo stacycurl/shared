@@ -1,4 +1,4 @@
-package stacycurl.scala.shared
+package sjc.shared
 
 import org.junit.Test
 import scala.collection.immutable.Stack
