@@ -1,19 +1,15 @@
 import sbt._
-import Keys._
 
-import sbtbuildinfo.Plugin._
+import com.typesafe.sbt.SbtScalariform.scalariformSettings
+import net.virtualvoid.sbt.graph.Plugin.graphSettings
+import org.scalastyle.sbt.ScalastylePlugin.{ Settings => scalaStyleSettings }
 
-import com.typesafe.sbt.SbtGit._
-import GitKeys._
+import sbt.Keys._
+import scoverage.ScoverageSbtPlugin._
+import scoverage.ScoverageSbtPlugin.ScoverageKeys._
 
-import sbtrelease._
-import sbtrelease.ReleasePlugin._
-import sbtrelease.ReleasePlugin.ReleaseKeys._
-import sbtrelease.ReleaseStateTransformations._
-import sbtrelease.Utilities._
 
 object SharedBuild extends Build {
-
   lazy val shared = Project(
     id = "shared",
     base = file("."),
@@ -33,7 +29,7 @@ object SharedBuild extends Build {
     Project(
       id = "shared-core",
       base = file("core"),
-      settings = commonSettings ++ buildInfoSettings ++ releaseSettings ++ Seq(
+      settings = commonSettings ++ Seq(
         moduleName := "shared",
 
         managedSourceDirectories in Test := Nil,
@@ -41,7 +37,6 @@ object SharedBuild extends Build {
         libraryDependencies <++= scalaVersion { sv =>
           Seq(
             "org.scala-lang" % "scala-compiler" % sv,
-            "com.novocode" % "junit-interface" % "0.7" % "test",
             "org.scalaz" % "scalaz-core_2.10" % "7.1.0"
         )},
 
@@ -53,30 +48,7 @@ object SharedBuild extends Build {
           },
 
         mappings in (Compile, packageSrc) <++=
-          (mappings in (Compile, packageSrc) in LocalProject("shared-examples")),
-
-        buildInfoPackage := "shared",
-        buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion),
-        buildInfoKeys ++= Seq[BuildInfoKey](
-          version,
-          scalaVersion,
-          gitHeadCommit,
-          BuildInfoKey.action("buildTime") {
-            System.currentTimeMillis
-          }
-        ),
-
-        releaseProcess := Seq[ReleaseStep](
-          checkSnapshotDependencies,
-          inquireVersions,
-          runTest,
-          setReleaseVersion,
-          commitReleaseVersion,
-          tagRelease,
-          setNextVersion,
-          commitNextVersion,
-          pushChanges
-        )
+          (mappings in (Compile, packageSrc) in LocalProject("shared-examples"))
       )
     )
 
@@ -86,11 +58,7 @@ object SharedBuild extends Build {
     dependencies = Seq(sharedCore),
 
     settings = commonSettings ++ Seq(
-      libraryDependencies <++= scalaVersion { sv =>
-        Seq(
-          "org.scala-lang" % "scala-compiler" % sv,
-          "com.novocode" % "junit-interface" % "0.7" % "test"
-      )},
+      libraryDependencies <++= scalaVersion(sv => Seq("org.scala-lang" % "scala-compiler" % sv)),
 
       runAllIn(Compile),
 
@@ -107,26 +75,32 @@ object SharedBuild extends Build {
     }
   }
 
-  def commonSettings = Defaults.defaultSettings ++
-    Seq(
-      organization        := "com.github.stacycurl",
-      scalaVersion        := "2.10.3",
-      scalaBinaryVersion  := "2.10.3",
+  def commonSettings = graphSettings ++ Defaults.defaultSettings ++
+  // uncomment when you want to reset the formatting of the project
+  // scalariformSettings ++
+  scalaStyleSettings ++ instrumentSettings ++ Seq(
+    organization        := "com.github.stacycurl",
+    scalaVersion        := "2.10.3",
 
-      (unmanagedSourceDirectories in Compile) <<= (scalaSource in Compile)(Seq(_)),
-      (unmanagedSourceDirectories in Test) <<= (scalaSource in Test)(Seq(_)),
+    (unmanagedSourceDirectories in Compile) <<= (scalaSource in Compile)(Seq(_)),
+    (unmanagedSourceDirectories in Test) <<= (scalaSource in Test)(Seq(_)),
 
-      scalacOptions       := Seq(
-        "-feature",
-        "-language:higherKinds",
-        "-language:implicitConversions",
-        "-Xfatal-warnings",
-        "-deprecation",
-        "-unchecked"),
+    scalacOptions       := Seq(
+      "-feature",
+      "-language:higherKinds",
+      "-language:implicitConversions",
+      "-Xfatal-warnings",
+      "-deprecation",
+      "-unchecked"),
 
-      resolvers           ++= Seq(
-        Classpaths.typesafeSnapshots,
-        "snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
-      )
-    )
+    resolvers           ++= Seq(
+      Classpaths.typesafeSnapshots,
+      "snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+    ),
+    libraryDependencies += "org.scalaz"     % "scalaz-scalacheck-binding_2.10" % "7.1.0"  % "test",
+    libraryDependencies += "org.scalacheck" % "scalacheck_2.10"                % "1.11.5" % "test",
+    libraryDependencies += "com.novocode"   % "junit-interface"                % "0.7"    % "test",
+
+    highlighting := true
+  )
 }
