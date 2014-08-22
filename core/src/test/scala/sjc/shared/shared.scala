@@ -364,6 +364,24 @@ class SharedTests {
     assertEquals(Nil, changes.get())
   }
 
+  @Test def threadLocalShared {
+    val shared = Shared.threadLocal("initial", new Synchronized)
+    val results = Shared[Map[String, String]](Map.empty)
+
+    def appender(append: String) = thread {
+      for { _ <- Range(1, 10) } shared.modify(_ ++ append).after
+
+      results += ((append, shared.get()))
+    }
+
+    val modifiers = List(appender("1"), appender("2")) ++ threads(10, shared.modify("<" ++ _))
+
+    modifiers.foreach(_.start())
+    modifiers.foreach(_.join())
+
+    assertEquals(Map("1" -> "initial111111111", "2" -> "initial222222222"), results.get())
+  }
+
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =
     List.fill(count)(thread(f))
 

@@ -9,6 +9,7 @@ import scalaz._
 
 object Shared {
   def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
+  def threadLocal[A](initial: A, lock: Lock = Unlocked): Shared[A] = ThreadLocalShared[A](initial, lock)
 
   implicit object SharedInstance extends InvariantFunctor[Shared] with Unzip[Shared] with Zip[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
@@ -110,6 +111,17 @@ case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
     callbacks.apply(lock.withWrite(f(value).perform(change => current = change.after)))
 
   private var current = initial
+  private val callbacks: Callbacks[A] = new Callbacks[A]
+}
+
+case class ThreadLocalShared[A](initial: A, lock: Lock = Unlocked) extends Shared[A] {
+  def get(): A = dynamic.value
+  def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
+
+  def alter(f: A => Change[A]): Change[A] =
+    callbacks.apply(lock.withWrite(f(value).perform(change => dynamic.value = change.after)))
+
+  private val dynamic = new scala.util.DynamicVariable[A](initial)
   private val callbacks: Callbacks[A] = new Callbacks[A]
 }
 
