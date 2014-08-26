@@ -28,6 +28,8 @@ object Reader {
     override def map[A, B](ra: Reader[A])(f: A => B): Reader[B] = ra.map(f)
   }
 
+  implicit def equalReader[A: Equal]: Equal[Reader[A]] = Equal.equalBy[Reader[A], A](_.get())
+
   implicit object ReaderRepresentable extends Representable[Reader, Unit] {
     def rep[A](f: Unit => A): Reader[A] = FunctionReader[A](() => f())
     def unrep[A](ra: Reader[A]): Unit => A = u => ra.get()
