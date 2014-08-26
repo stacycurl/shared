@@ -11,13 +11,15 @@ object Shared {
   def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
   def threadLocal[A](initial: A, lock: Lock = Unlocked): Shared[A] = ThreadLocalShared[A](initial, lock)
 
-  implicit object SharedInstance extends InvariantFunctor[Shared] with Unzip[Shared] with Zip[Shared] {
+  implicit object SharedInstance extends InvariantFunctor[Shared] with Unzip[Shared] {
     def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
-    def zip[A, B](sa: => Shared[A], sb: => Shared[B]): Shared[(A, B)] = sa.zip(sb)
 
     def unzip[A, B](sab: Shared[(A, B)]): (Shared[A], Shared[B]) =
       (sab.lens(Lens.firstLens), sab.lens(Lens.secondLens))
   }
+
+  implicit def sharedEqual[A: Equal]: Equal[Shared[A]] =
+    Equal.equalBy[Shared[A], A](_.get())
 
   implicit def sharedShow[A: Show]: Show[Shared[A]] =
     Show.show[Shared[A]]((sa: Shared[A]) => Show[A].show(sa.get()))

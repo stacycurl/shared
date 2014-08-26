@@ -2,12 +2,14 @@ package sjc.shared
 
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
+import org.scalacheck._
 import scala.collection.immutable.Stack
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scalaz._
 
 import org.junit.Assert._
+import scalaz.scalacheck.ScalazProperties._
 
 
 class SharedTests {
@@ -397,4 +399,12 @@ class SharedTests {
 
   private val first  = Lens.firstLens[String, Int]
   private val second = Lens.secondLens[String, Int]
+}
+
+object SharedSpec extends BaseSpec("Shared") {
+  implicit def arbShared[A: Arbitrary]: Arbitrary[Shared[A]] = Arbitrary {
+    for (a <- arbitrary[A]) yield Shared[A](a)
+  }
+
+  checkAll(invariantFunctor.laws[Shared])
 }
