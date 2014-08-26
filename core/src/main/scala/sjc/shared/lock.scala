@@ -14,7 +14,8 @@ object Lock {
 trait Lock {
   def withRead[A](f: => A): A
   def withWrite[A](f: => A): A
-  def zip(other: Lock): Lock = new ZippedLock(this, other)
+  def zip(other: Lock): Lock = ZippedLock(this, other)
+  def tap(callback: LockEvent => Unit): Lock = TappedLock(this, callback)
 
   private[shared] val isStable: Boolean
   private[shared] def identity: Int
@@ -52,7 +53,7 @@ case object Unlocked extends Lock {
   private[shared] val locks = Stream(this)
 }
 
-class ZippedLock(left: Lock, right: Lock) extends Lock {
+case class ZippedLock(left: Lock, right: Lock) extends Lock {
   def withRead[A](f: => A): A  = withLocks(f)(_.withRead)
   def withWrite[A](f: => A): A = withLocks(f)(_.withWrite)
 
@@ -72,6 +73,25 @@ class ZippedLock(left: Lock, right: Lock) extends Lock {
   private lazy val stableLocks = locks
 }
 
+case class TappedLock(lock: Lock, callback: LockEvent => Unit) extends Lock {
+  def withRead[A](f: => A): A = {
+    callback(EnteringRead(lock))
+    try lock.withRead(f) finally callback(LeavingRead(lock))
+  }
+
+  def withWrite[A](f: => A): A = {
+    callback(EnteringWrite(lock))
+    try lock.withWrite(f) finally callback(LeavingWrite(lock))
+  }
+
+  private[shared] val isStable = lock.isStable
+  private[shared] def identity = lock.identity
+  private[shared] def locks = if (isStable) stableLocks else tapLocks
+
+  private lazy val stableLocks = tapLocks
+  private def tapLocks = lock.locks.map(_.tap(callback))
+}
+
 // Not sure if this is useful at all, just 'closing' over the types defined
 class SharedLock(value: Shared[Lock] = Shared(Synchronized())) extends Lock with Shared[Lock] {
   def withRead[A](f: => A): A = value.get().withRead[A](f)
@@ -86,3 +106,9 @@ class SharedLock(value: Shared[Lock] = Shared(Synchronized())) extends Lock with
   private[shared] def identity = value.get().identity
   private[shared] def locks = value.get().locks
 }
+
+sealed trait LockEvent
+case class EnteringRead(lock: Lock) extends LockEvent
+case class LeavingRead(lock: Lock) extends LockEvent
+case class EnteringWrite(lock: Lock) extends LockEvent
+case class LeavingWrite(lock: Lock) extends LockEvent

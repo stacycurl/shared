@@ -148,6 +148,12 @@ class SharedTests {
     list.clear()
 
     assertEquals(Nil, list.get())
+
+    list += "new"
+    list += "newer"
+
+    assertEquals(List("new", "newer"), list.drain())
+    assertEquals(Nil, list.drain())
   }
 
   @Test def sharedMapBehavesLikeMapBuilder {

@@ -35,6 +35,7 @@ object Shared {
     def +=(a: A): this.type = { list.modify(_ :+ a); this }
     def clear(): Unit       = list.value = Nil
     def result(): List[A]   = list.get()
+    def drain(): List[A]    = { val result = this.result(); clear(); result }
   }
 
   implicit class SharedMap[K, V](map: Shared[Map[K, V]]) extends Builder[(K, V), Map[K, V]] {
