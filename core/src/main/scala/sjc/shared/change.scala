@@ -8,17 +8,15 @@ object Change {
   def many[A](as: A*): List[Change[A]] = if (as.isEmpty) Nil else as.zip(as.tail).map(tuple).toList
   def tuple[A](beforeAfter: (A, A)): Change[A] = Change(beforeAfter._1, beforeAfter._2)
 
-  implicit object ChangeInstance extends Comonad[Change] with Monad[Change]
-    with Traverse[Change] with Unzip[Change] with Zip[Change] {
+  implicit object ChangeInstance extends Applicative[Change] with Unzip[Change] with Zip[Change] {
+    override def ap[A, B](ca: => Change[A])(cab: => Change[A => B]): Change[B] = {
+      val Change(beforeA,  afterA)  = ca
+      val Change(beforeAB, afterAB) = cab
+
+      Change[B](beforeAB(beforeA), afterAB(afterA))
+    }
 
     def point[A](a: => A): Change[A] = Change(a, a)
-    def copoint[A](ca: Change[A]): A = ca.after
-
-    def bind[A, B](ca: Change[A])(f: A => Change[B]): Change[B] = ca.flatMap(f)
-    def cobind[A, B](ca: Change[A])(f: Change[A] => B): Change[B] = point(f(ca))
-
-    def traverseImpl[G[_]: Applicative, A, B](ca: Change[A])(f: A => G[B]): G[Change[B]] =
-      Functor[G].map[B, Change[B]](f(ca.after))((b: B) => point(b))
 
     def zip[A, B](ca: => Change[A], cb: => Change[B]): Change[(A, B)] = ca.zip(cb)
 
@@ -26,6 +24,9 @@ object Change {
 
     override def map[A, B](ca: Change[A])(f: A => B): Change[B] = ca.map(f)
   }
+
+  implicit def equalChange[A](implicit equal: Equal[A]): Equal[Change[A]] =
+    scalaz.std.tuple.tuple2Equal[A, A].contramap[Change[A]](_.tuple)
 
   implicit class ChangeOps[A](change: Change[A]) {
     def delta(implicit ev: A =:= Int): Int = change.after - change.before
@@ -45,11 +46,12 @@ object Change {
 
 case class Change[+A](before: A, after: A) {
   def calc[B](g: (A, A) => B) = g(before, after)
-  def flatMap[B](f: A => Change[B]): Change[B] = f(after)
   def zip[B](cb: Change[B]): Change[(A, B)] = Change((before, cb.before), (after, cb.after))
   def fold[B](unchanged: Unchanged[A] => B)(changed: Change[A] => B): B = changed(this)
+  def tuple = (before, after)
 }
 
-class Unchanged[+A](val value: A) extends Change[A](value, value){
+class Unchanged[+A](val value: A) extends Change[A](value, value) {
   override def fold[B](unchanged: Unchanged[A] => B)(changed: Change[A] => B): B = unchanged(this)
+  override def toString = s"Unchanged($value)"
 }

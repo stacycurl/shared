@@ -1,6 +1,7 @@
 package sjc.shared
 
 import org.junit.Test
+import org.scalacheck._
 
 import org.junit.Assert._
 import scalaz._
@@ -17,6 +18,7 @@ class ChangeTests {
 
   @Test def canMapOver {
     assertEquals(Change("1", "2"), Change(1, 2).map(_.toString))
+    assertEquals(new Unchanged(2), new Unchanged(1).map(_ * 2))
   }
 
   @Test def canZip {
@@ -66,4 +68,16 @@ class ChangeTests {
     assertEquals(unchanged, unchanged.revert(int))
     assertEquals(100, int.get())
   }
+}
+
+object ChangeSpec extends BaseSpec("Change") {
+  import scalaz.scalacheck.ScalazProperties._
+
+  implicit def change[A](implicit arb: Arbitrary[A]): Arbitrary[Change[A]] = Arbitrary {
+    for { before <- arb.arbitrary; after <- arb.arbitrary } yield Change[A](before, after)
+  }
+
+  checkAll(applicative.laws[Change])
+  checkAll(equal.laws[Change[Int]])
+  checkAll(zip.laws[Change])
 }

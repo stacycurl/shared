@@ -9,25 +9,10 @@ object Changes {
   def apply[A](changes: Change[A]*): Changes[A] = apply(Shared(changes.toList))
   def apply[A](changes: Shared[List[Change[A]]]): Changes[A] = SharedChanges(changes)
 
-  implicit object ChangeeInstance extends Monad[Changes] with Traverse[Changes] with Unzip[Changes]
-    with Zip[Changes] {
-
+  implicit object ChangesInstance extends Bind[Changes] with Unzip[Changes] with Zip[Changes] {
     def point[A](a: => A): Changes[A] = SharedChanges(Shared(List(Change.point(a))))
 
     def bind[A, B](csa: Changes[A])(f: A => Changes[B]): Changes[B] = csa.flatMap(f)
-
-    def traverseImpl[G[_]: Applicative, A, B](csa: Changes[A])(f: A => G[B]): G[Changes[B]] = {
-      type LC[A] = List[Change[A]]
-
-      val LC: Traverse[LC] = Traverse[List].compose(Traverse[Change])
-      val G: Functor[G]    = Functor[G]
-
-      val fgb: LC[G[B]]            = csa.map(f).get()
-      val glcb: G[List[Change[B]]] = LC.sequence(fgb)
-      val result: G[Changes[B]]    = G.map(glcb)(lcb => Changes(Shared(lcb)))
-
-      result
-    }
 
     def unzip[A, B](csab: Changes[(A, B)]): (Changes[A], Changes[B]) =
       (map[(A, B), A](csab)(_._1), map[(A, B), B](csab)(_._2))
@@ -36,6 +21,9 @@ object Changes {
 
     override def map[A, B](csa: Changes[A])(f: A => B): Changes[B] = csa.map(f)
   }
+
+  implicit def equalChanges[A](implicit equalChange: Equal[Change[A]]): Equal[Changes[A]] =
+    scalaz.std.list.listEqual[Change[A]].contramap[Changes[A]](_.get())
 }
 
 trait Changes[A] extends Reader[List[Change[A]]] {

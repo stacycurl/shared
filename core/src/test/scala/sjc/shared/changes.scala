@@ -1,6 +1,8 @@
 package sjc.shared
 
 import org.junit.Test
+import org.scalacheck._
+import scalaz.Equal
 
 import org.junit.Assert._
 
@@ -21,19 +23,48 @@ class ChangesTests {
   }
 
   @Test def canMapOver {
+    val original = Changes.many(1, 2)
+
     assertEquals(List(Change("1", "2")),
-      Changes.many(1, 2).map[String]((i: Int) => i.toString).get())
+      original.map[String]((i: Int) => i.toString).get())
+
+    assertEquals(List(Change("1", "2")),
+      Changes.ChangesInstance.map(original)((i: Int) => i.toString).get())
+
+    original.map((i: Int) => i.toString).clear()
+    assertEquals(Nil, original.get())
   }
 
   @Test def canFlatMap {
     // Todo check functor laws
+    val original = Changes.many(1, 2, 3)
+
     assertEquals(List(Change(-2, 2), Change(-3, 3)),
-      Changes.many(1, 2, 3).flatMap(i => Changes.many(-i, i)).get())
+      original.flatMap(i => Changes.many(-i, i)).get())
+
+    assertEquals(List(Change(-2, 2), Change(-3, 3)),
+      Changes.ChangesInstance.bind(original)(i => Changes.many(-i, i)).get())
+
+    original.flatMap(i => Changes.many(-i, i)).clear()
+    assertEquals(Nil, original.get())
   }
 
   @Test def canZip {
-    assertEquals(List(Change((1, "one"), (2, "two"))),
-      Changes.many(1, 2).zip(Changes.many("one", "two")).get())
+    val (left, right) = (Changes.many(1, 2), Changes.many("one", "two"))
+
+    assertEquals(List(Change((1, "one"), (2, "two"))), left.zip(right).get())
+    assertEquals(List(Change((1, "one"), (2, "two"))), Changes.ChangesInstance.zip(left, right).get())
+
+    left.zip(right).clear()
+    assertEquals(Nil, left.get())
+    assertEquals(Nil, right.get())
+  }
+
+  @Test def canUnzip {
+    val (left, right) = Changes.ChangesInstance.unzip(Changes.many((1, "one"), (2, "two")))
+
+    assertEquals(List(Change(1, 2)), left.get())
+    assertEquals(List(Change("one", "two")), right.get())
   }
 
   @Test def canFilter {
@@ -47,5 +78,32 @@ class ChangesTests {
 
     assertEquals(Changes.many(1, 10, 7, 2).get(),
       Changes.many(1, 2, 10, 11, 9, 7, 2, 1).filter(ci => math.abs(ci.after - ci.before) > 1).get())
+
+    val unfiltered = Changes.many(1, 2, 3)
+    unfiltered.filter(_ => true).clear()
+
+    assertEquals(Nil, unfiltered.get())
   }
+
+  @Test def point {
+    assertEquals(List(Change.point(1)), Changes.ChangesInstance.point(1).get())
+  }
+}
+
+object ChangesSpec extends BaseSpec("Changes") {
+  import scalaz.scalacheck.ScalazProperties._
+  import ChangeSpec._
+
+  implicit def changes[A](implicit change: Arbitrary[Change[A]]): Arbitrary[Changes[A]] = Arbitrary {
+    for (change <- change.arbitrary) yield Changes[A](change)
+  }
+
+  implicit val intChanges: Arbitrary[Changes[Int]] = Arbitrary {
+    for (change <- arbitrary[Change[Int]]) yield Changes[Int](change)
+  }
+
+  checkAll(bind.laws[Changes])
+  checkAll(equal.laws[Changes[Int]])
+  checkAll(functor.laws[Changes])
+  checkAll(zip.laws[Changes])
 }
