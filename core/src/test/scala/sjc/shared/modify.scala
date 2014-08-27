@@ -2,9 +2,11 @@ package sjc.shared
 
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
+import org.scalacheck._
+import scalaz._
 
 import org.junit.Assert._
-import scalaz._
+import scalaz.scalacheck.ScalazProperties._
 
 
 class ModifyTests {
@@ -44,4 +46,15 @@ class ModifyTests {
   }
 
   private val second = Lens.secondLens[String, Int]
+}
+
+object ModifySpec extends BaseSpec("Modify") {
+  implicit val arbitraryModifyInt: Arbitrary[Modify[Int]] = Arbitrary {
+    for (endo <- arbitrary[Int => Int]) yield Modify[Int](endo)
+  }
+
+  implicit val equalModifyInt: Equal[Modify[Int]] =
+    Equal.equalBy[Modify[Int], Int](mi => mi.apply(0) + mi.apply(1) + mi.apply(100))
+
+  checkAll(invariantFunctor.laws[Modify])
 }

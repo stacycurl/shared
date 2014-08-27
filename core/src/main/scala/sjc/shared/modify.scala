@@ -4,11 +4,8 @@ import scalaz._
 
 
 object Modify {
-  implicit object ModifyInstance extends InvariantFunctor[Modify] with Zip[Modify] {
+  implicit object ModifyInstance extends InvariantFunctor[Modify] {
     def xmap[A, B](ma: Modify[A], aToB: A => B, bToA: B => A): Modify[B] = ma.xmap[B](aToB, bToA)
-
-    def zip[A, B](ma: => Modify[A], mb: => Modify[B]): Modify[(A, B)] =
-      Modify[(A, B)] { case (a, b) => (ma(a), mb(b)) }
   }
 }
 
