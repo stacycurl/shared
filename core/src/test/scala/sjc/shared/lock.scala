@@ -20,7 +20,7 @@ class LockTests {
 
   @Test def zip {
     val (left, right) = {
-      val (one, two) = (Synchronized("one"), Synchronized("two"))
+      val (one, two) = (Synchronized("one"), ReadWriteLock())
 
       if (one.identity < two.identity) (one, two) else (two, one)
     }

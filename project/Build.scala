@@ -101,6 +101,8 @@ object SharedBuild extends Build {
     libraryDependencies += "org.scalacheck" % "scalacheck_2.10"                % "1.11.5" % "test",
     libraryDependencies += "com.novocode"   % "junit-interface"                % "0.7"    % "test",
 
-    highlighting := true
+    highlighting := true,
+    minimumCoverage := 100,
+    failOnMinimumCoverage := true
   )
 }

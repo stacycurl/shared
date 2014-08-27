@@ -13,6 +13,12 @@ import scalaz.scalacheck.ScalazProperties._
 
 
 class SharedTests {
+  @Test def canShow {
+    implicit val showInt: Show[Int] = Show.shows[Int](i => s"Int: $i")
+
+    assertEquals("Int: 123", Shared.sharedShow[Int].shows(Shared(123)))
+  }
+
   @Test def canGetInitialValue {
     assertEquals("initial", Shared("initial").get())
   }
@@ -89,6 +95,8 @@ class SharedTests {
 
     assertEquals(Change("laitini", "deifidom >> laitini"), reversed.modify("deifidom >> " + _))
     assertEquals("initial >> modified", string.get())
+
+    assertSame(string.lock, reversed.lock)
   }
 
   @Test def canCreateLens {
@@ -106,6 +114,9 @@ class SharedTests {
     assertEquals(2,            int.get())
 
     assertEquals(("one >> two", 2), tuple.get())
+
+    assertSame(tuple.lock, string.lock)
+    assertSame(tuple.lock, int.lock)
   }
 
   @Test def canZip {
@@ -119,6 +130,19 @@ class SharedTests {
 
     assertEquals("two", string.get())
     assertEquals(2,     int.get())
+  }
+
+  @Test def canUnzip {
+    val tuple = Shared(("one", 1))
+    val (string, int) = Shared.SharedInstance.unzip(tuple)
+
+    assertEquals("one", string.get())
+    assertEquals(1, int.get())
+
+    assertEquals(Change("one", "two"), string.modify(_ => "two"))
+
+    assertEquals("two", string.get())
+    assertEquals(("two", 1), tuple.get())
   }
 
   @Test def canFilter {
@@ -138,6 +162,8 @@ class SharedTests {
     bigInt += 2
     assertEquals(4, bigInt.get())
     assertEquals(List(Change(1, 2), Change(2, 4)), bigIntChanges.get())
+
+    assertSame(int.lock, bigInt.lock)
   }
 
   @Test def sharedListBehavesLikeListBuffer {
@@ -238,9 +264,17 @@ class SharedTests {
   @Test def canGetTransformedViewOfAnySeq {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
+    val paddedList  = list.transform(_.padTo(5, 0))
+    val paddedStack = stack.transform(_.padTo(5, 0))
 
-    assertEquals(list.get().padTo(5, 0),  list.transform(_.padTo(5, 0)).get())
-    assertEquals(stack.get().padTo(5, 0), stack.transform(_.padTo(5, 0)).get())
+    assertEquals(list.get().padTo(5, 0),  paddedList.get())
+    assertEquals(stack.get().padTo(5, 0), paddedStack.get())
+
+    paddedList.value  = List(4)
+    paddedStack.value = Stack(4)
+
+    assertEquals(List(4), list.get())
+    assertEquals(Stack(4), stack.get())
   }
 
   @Test def canAwaitForPredicate {
@@ -374,10 +408,11 @@ class SharedTests {
 
   @Test def threadLocalShared {
     val shared = Shared.threadLocal("initial", new Synchronized)
+    val changes = shared.changes()
     val results = Shared[Map[String, String]](Map.empty)
 
     def appender(append: String) = thread {
-      for { _ <- Range(1, 10) } shared.modify(_ ++ append).after
+      for { _ <- Range(0, 10) } shared.modify(_ ++ append).after
 
       results += ((append, shared.get()))
     }
@@ -387,7 +422,8 @@ class SharedTests {
     modifiers.foreach(_.start())
     modifiers.foreach(_.join())
 
-    assertEquals(Map("1" -> "initial111111111", "2" -> "initial222222222"), results.get())
+    assertEquals(Map("1" -> "initial1111111111", "2" -> "initial2222222222"), results.get())
+    assertEquals(30, changes.get().size)
   }
 
   private def threads[Discard](count: Int, f: => Discard): List[Thread] =

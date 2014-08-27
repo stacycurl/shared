@@ -8,6 +8,11 @@ import scalaz._
 
 
 class ChangeTests {
+  @Test def testToString {
+    assertEquals("Change(1,2)", Change(1, 2).toString)
+    assertEquals("Unchanged(1)", new Unchanged(1).toString)
+  }
+
   @Test def calcPerformsCalculateOnOldAndModifiedValue {
     assertEquals(List("initial", "initial >> modified"),
       Change("initial", "initial >> modified").calc {
@@ -23,6 +28,11 @@ class ChangeTests {
 
   @Test def canZip {
     assertEquals(Change(("one", 1), ("two", 2)), Change("one", "two").zip(Change(1, 2)))
+  }
+
+  @Test def canUnzip {
+    assertEquals((Change("one", "two"), Change(1, 2)),
+      Change.ChangeInstance.unzip(Change(("one", 1), ("two", 2))))
   }
 
   @Test def canJoin {
