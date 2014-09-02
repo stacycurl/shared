@@ -1,6 +1,5 @@
 package sjc.shared
 
-import org.junit.Test
 import org.scalacheck._
 import scalaz.Equal
 

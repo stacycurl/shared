@@ -4,33 +4,17 @@ import scala.annotation.tailrec
 import scala.collection.SeqLike
 import scala.collection.mutable.Builder
 import scala.collection.generic._
-import scalaz._
 
 
 object Shared {
   def apply[A](initial: A, lock: Lock = Synchronized(new Object)): Shared[A] = LockShared[A](initial, lock)
   def threadLocal[A](initial: A, lock: Lock = Unlocked): Shared[A] = ThreadLocalShared[A](initial, lock)
 
-  implicit object SharedInstance extends InvariantFunctor[Shared] with Unzip[Shared] {
-    def xmap[A, B](sa: Shared[A], aToB: A => B, bToA: B => A): Shared[B] = sa.xmap(aToB, bToA)
-
-    def unzip[A, B](sab: Shared[(A, B)]): (Shared[A], Shared[B]) =
-      (sab.lens(Lens.firstLens), sab.lens(Lens.secondLens))
-  }
-
-  implicit def sharedEqual[A: Equal]: Equal[Shared[A]] =
-    Equal.equalBy[Shared[A], A](_.get())
-
-  implicit def sharedShow[A: Show]: Show[Shared[A]] =
-    Show.show[Shared[A]]((sa: Shared[A]) => Show[A].show(sa.get()))
-
   implicit class SharedOps[A](sa: Shared[A]) {
     def +=(a: A)(implicit N: Numeric[A]) = sa.modify(N.plus(_, a))
     def -=(a: A)(implicit N: Numeric[A]) = sa.modify(N.minus(_, a))
     def *=(a: A)(implicit N: Numeric[A]) = sa.modify(N.times(_, a))
     def /=(a: A)(implicit F: Fractional[A]) = sa.modify(F.div(_, a))
-    def append(a: A)(implicit S: Semigroup[A]) = sa.modify(S.append(_, a))
-    def clear()(implicit M: Monoid[A]): Shared[A] = { sa.value = M.zero; sa }
   }
 
   implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
@@ -97,7 +81,6 @@ trait Shared[A] extends Reader[A] {
   def modify(f: A => A): Change[A] = alter((a: A) => Change(a, f(a)))
   def alter(f: A => Change[A]): Change[A]
 
-  def lens[B](lens: Lens[A, B]): Shared[B]           = LensShared[A, B](this, lens)
   def transform(f: A => A): Shared[A]                = xmap[A](f, identity[A])
   def xmap[B](aToB: A => B, bToA: B => A): Shared[B] = XMapShared[A, B](this, aToB, bToA)
   def zip[B](sb: Shared[B]): Shared[(A, B)]          = ZippedShared[A, B](this, sb)
@@ -132,13 +115,6 @@ case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends S
   def get(): B = aToB(sa.get())
   def onChange(callbackB: Callback[B]): this.type = {sa.onChange(callbackB.contramap(aToB)); this}
   def alter(f: B => Change[B]): Change[B] = sa.alter((a: A) => f(aToB(a)).map(bToA)).map(aToB)
-  def lock = sa.lock
-}
-
-case class LensShared[A, B](sa: Shared[A], lens: Lens[A, B]) extends Shared[B] {
-  def get(): B = lens.get(sa.get())
-  def onChange(callbackB: Callback[B]): this.type = {sa.onChange(callbackB.contramap(lens.get)); this}
-  def alter(f: B => Change[B]): Change[B] = sa.alter((a: A) => lens.modf(f, a)).map(lens.get)
   def lock = sa.lock
 }
 

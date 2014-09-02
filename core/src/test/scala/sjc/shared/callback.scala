@@ -1,8 +1,6 @@
 package sjc.shared
 
 import org.junit.Test
-import org.scalacheck._
-import scalaz._
 
 import org.junit.Assert._
 
@@ -44,23 +42,9 @@ class CallbackTests {
   @Test def canContramap {
     val ints = Shared[List[Change[Int]]](Nil)
     val intCallback = Callback[Int](ints += _)
-    val stringCallback = Callback.CallbackContravariant.contramap[Int, String](intCallback)(_.toInt)
+    val stringCallback = intCallback.contramap[String](_.toInt)
 
     stringCallback(Change("123", "456"))
     assertEquals(List(Change(123, 456)), ints.get())
   }
-}
-
-object CallbackSpec extends BaseSpec("Callback") {
-  import scalaz.scalacheck.ScalazProperties._
-  import ChangeSpec._
-
-  implicit val intCallback: Arbitrary[Callback[Int]] = Arbitrary {
-    Gen.const(Callback[Int](_ => ()))
-  }
-
-  implicit def equalIntCallback: Equal[Callback[Int]] =
-    Equal.equalBy[Callback[Int], Change[Int]](_.apply(Change(123, 456)))
-
-  checkAll(contravariant.laws[Callback])
 }

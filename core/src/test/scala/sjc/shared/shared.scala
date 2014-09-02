@@ -2,23 +2,13 @@ package sjc.shared
 
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
-import org.scalacheck._
 import scala.collection.immutable.Stack
-import scala.collection.mutable.ListBuffer
 import scala.util.Random
-import scalaz._
 
 import org.junit.Assert._
-import scalaz.scalacheck.ScalazProperties._
 
 
 class SharedTests {
-  @Test def canShow {
-    implicit val showInt: Show[Int] = Show.shows[Int](i => s"Int: $i")
-
-    assertEquals("Int: 123", Shared.sharedShow[Int].shows(Shared(123)))
-  }
-
   @Test def canGetInitialValue {
     assertEquals("initial", Shared("initial").get())
   }
@@ -99,26 +89,6 @@ class SharedTests {
     assertSame(string.lock, reversed.lock)
   }
 
-  @Test def canCreateLens {
-    val tuple  = Shared(("one", 1))
-    val string = tuple.lens(first)
-    val int    = tuple.lens(second)
-
-    assertEquals("one", string.get())
-    assertEquals(1,     int.get())
-
-    assertEquals(Change("one", "one >> two"), string.modify(_ ++ " >> two"))
-    assertEquals(Change(1, 2),                int.modify(_ + 1))
-
-    assertEquals("one >> two", string.get())
-    assertEquals(2,            int.get())
-
-    assertEquals(("one >> two", 2), tuple.get())
-
-    assertSame(tuple.lock, string.lock)
-    assertSame(tuple.lock, int.lock)
-  }
-
   @Test def canZip {
     val string = Shared("one")
     val int    = Shared(1)
@@ -130,19 +100,6 @@ class SharedTests {
 
     assertEquals("two", string.get())
     assertEquals(2,     int.get())
-  }
-
-  @Test def canUnzip {
-    val tuple = Shared(("one", 1))
-    val (string, int) = Shared.SharedInstance.unzip(tuple)
-
-    assertEquals("one", string.get())
-    assertEquals(1, int.get())
-
-    assertEquals(Change("one", "two"), string.modify(_ => "two"))
-
-    assertEquals("two", string.get())
-    assertEquals(("two", 1), tuple.get())
   }
 
   @Test def canFilter {
@@ -213,28 +170,6 @@ class SharedTests {
     si /= 3.0
 
     assertEquals(2.0, si.get(), 1e-6)
-  }
-
-  @Test def sharedSemigroup {
-    val maxInt = Shared[Int](1)
-    val changes = maxInt.changes()
-
-    implicit val maxIntSemigroup = Semigroup.instance[Int] {
-      case (l, r) => math.max(l, r)
-    }
-
-    List(2, 3, 1, 5, 6).foreach(i => maxInt.append(i))
-
-    assertEquals(List(1, 2, 3, 3, 5, 6), changes.values())
-  }
-
-  @Test def sharedMonoid {
-    implicit val minIntMonoid = Monoid.instance[Int]((l, r) => math.min(l, r), Int.MaxValue)
-    val int = Shared(1)
-
-    int.clear()
-
-    assertEquals(Int.MaxValue, int.get())
   }
 
   @Test def canGetSortedViewOfAnySeq {
@@ -347,26 +282,6 @@ class SharedTests {
     assertEquals(Change.many(1.0, 2.0, 3.0), doubleChanges.get())
   }
 
-  @Test def lensSharedCanNotifyOnChange {
-    val tuple  = Shared(("one", 1))
-    val string = tuple.lens(first)
-
-    val tupleChanges  = tuple.changes()
-    val stringChanges = string.changes()
-
-    assertEquals(Nil, stringChanges.get())
-
-    tuple.value = ("two", 2)
-
-    assertEquals(Change.many(("one", 1), ("two", 2)), tupleChanges.get())
-    assertEquals(Change.many("one", "two"),           stringChanges.get())
-
-    string.value = "three"
-
-    assertEquals(Change.many(("one", 1), ("two", 2), ("three", 2)), tupleChanges.get())
-    assertEquals(Change.many("one", "two", "three"),                stringChanges.get())
-  }
-
   @Test def zipSharedCanNotifyOnChange {
     val int    = Shared(1)
     val string = Shared("one")
@@ -432,15 +347,4 @@ class SharedTests {
   private def thread[Discard](f: => Discard): Thread = new Thread {
     override def run() = f
   }
-
-  private val first  = Lens.firstLens[String, Int]
-  private val second = Lens.secondLens[String, Int]
-}
-
-object SharedSpec extends BaseSpec("Shared") {
-  implicit def arbShared[A: Arbitrary]: Arbitrary[Shared[A]] = Arbitrary {
-    for (a <- arbitrary[A]) yield Shared[A](a)
-  }
-
-  checkAll(invariantFunctor.laws[Shared])
 }

@@ -11,59 +11,25 @@ import scoverage.ScoverageSbtPlugin.ScoverageKeys._
 
 object SharedBuild extends Build {
   lazy val shared = Project(
-    id = "shared",
+    id = "shared-parent",
     base = file("."),
-    aggregate = Seq(sharedCore, sharedExamples),
-    settings = commonSettings ++ Seq(
-      moduleName := "shared-root",
-
-      (unmanagedSourceDirectories in Compile) := Nil,
-      (unmanagedSourceDirectories in Test) := Nil,
-
-      publish := (),
-      publishLocal := ()
-    )
+    settings = commonSettings,
+    aggregate = Seq(sharedCore, sharedExtra)
   )
 
-  lazy val sharedCore =
-    Project(
-      id = "shared-core",
-      base = file("core"),
-      settings = commonSettings ++ Seq(
-        moduleName := "shared",
+  lazy val sharedCore = Project(
+    id = "shared-core",
+    base = file("core"),
+    settings = commonSettings
+  )
 
-        managedSourceDirectories in Test := Nil,
-
-        libraryDependencies <++= scalaVersion { sv =>
-          Seq(
-            "org.scala-lang" % "scala-compiler" % sv,
-            "org.scalaz" % "scalaz-core_2.10" % "7.1.0"
-        )},
-
-        initialCommands in console := """import sjc.shared._""",
-
-        mappings in (Compile, packageSrc) <++=
-          (sourceManaged in Compile, managedSources in Compile) map { (base, srcs) =>
-            (srcs pair (Path.relativeTo(base) | Path.flat))
-          },
-
-        mappings in (Compile, packageSrc) <++=
-          (mappings in (Compile, packageSrc) in LocalProject("shared-examples"))
-      )
-    )
-
-  lazy val sharedExamples = Project(
-    id = "shared-examples",
-    base = file("examples"),
+  lazy val sharedExtra = Project(
+    id = "shared-extra",
+    base = file("extra"),
     dependencies = Seq(sharedCore),
 
     settings = commonSettings ++ Seq(
-      libraryDependencies <++= scalaVersion(sv => Seq("org.scala-lang" % "scala-compiler" % sv)),
-
-      runAllIn(Compile),
-
-      publish := (),
-      publishLocal := ()
+      libraryDependencies += "org.scalaz" % "scalaz-scalacheck-binding_2.10" % "7.1.0"
     )
   )
 
@@ -97,9 +63,10 @@ object SharedBuild extends Build {
       Classpaths.typesafeSnapshots,
       "snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
     ),
-    libraryDependencies += "org.scalaz"     % "scalaz-scalacheck-binding_2.10" % "7.1.0"  % "test",
+
     libraryDependencies += "org.scalacheck" % "scalacheck_2.10"                % "1.11.5" % "test",
     libraryDependencies += "com.novocode"   % "junit-interface"                % "0.7"    % "test",
+    initialCommands in console := """import sjc.shared._""",
 
     highlighting := true,
     minimumCoverage := 100,

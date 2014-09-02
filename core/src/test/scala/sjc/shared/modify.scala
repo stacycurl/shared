@@ -3,10 +3,8 @@ package sjc.shared
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
 import org.scalacheck._
-import scalaz._
 
 import org.junit.Assert._
-import scalaz.scalacheck.ScalazProperties._
 
 
 class ModifyTests {
@@ -20,11 +18,6 @@ class ModifyTests {
     val addOneS: Modify[String] = addOne.xmap[String](_.toString, _.toInt)
 
     assertEquals(Change("1", "2"), Shared("1").modify(addOneS))
-  }
-
-  @Test def modifyCanBeAppliedToAPartOfAnotherShared {
-    assertEquals(Change(("one", 1), ("one", 2)),
-      Shared(("one", 1)).modify(Modify[Int](_ + 1).lens(second)))
   }
 
   @Test def canZip {
@@ -44,17 +37,4 @@ class ModifyTests {
 
     assertEquals(2, boolean.get().get())
   }
-
-  private val second = Lens.secondLens[String, Int]
-}
-
-object ModifySpec extends BaseSpec("Modify") {
-  implicit val arbitraryModifyInt: Arbitrary[Modify[Int]] = Arbitrary {
-    for (endo <- arbitrary[Int => Int]) yield Modify[Int](endo)
-  }
-
-  implicit val equalModifyInt: Equal[Modify[Int]] =
-    Equal.equalBy[Modify[Int], Int](mi => mi.apply(0) + mi.apply(1) + mi.apply(100))
-
-  checkAll(invariantFunctor.laws[Modify])
 }

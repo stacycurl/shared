@@ -1,10 +1,8 @@
 package sjc.shared
 
 import org.junit.Test
-import org.scalacheck._
 
 import org.junit.Assert._
-import scalaz._
 
 
 class ChangeTests {
@@ -28,11 +26,6 @@ class ChangeTests {
 
   @Test def canZip {
     assertEquals(Change(("one", 1), ("two", 2)), Change("one", "two").zip(Change(1, 2)))
-  }
-
-  @Test def canUnzip {
-    assertEquals((Change("one", "two"), Change(1, 2)),
-      Change.ChangeInstance.unzip(Change(("one", 1), ("two", 2))))
   }
 
   @Test def canJoin {
@@ -78,16 +71,13 @@ class ChangeTests {
     assertEquals(unchanged, unchanged.revert(int))
     assertEquals(100, int.get())
   }
-}
 
-object ChangeSpec extends BaseSpec("Change") {
-  import scalaz.scalacheck.ScalazProperties._
-
-  implicit def change[A](implicit arb: Arbitrary[A]): Arbitrary[Change[A]] = Arbitrary {
-    for { before <- arb.arbitrary; after <- arb.arbitrary } yield Change[A](before, after)
+  @Test def point {
+    assertEquals(new Unchanged(1), Change.point(1))
   }
 
-  checkAll(applicative.laws[Change])
-  checkAll(equal.laws[Change[Int]])
-  checkAll(zip.laws[Change])
+  @Test def tuple {
+    assertEquals((1, 2), Change(1, 2).tuple)
+    assertEquals((1, 1), new Unchanged(1).tuple)
+  }
 }

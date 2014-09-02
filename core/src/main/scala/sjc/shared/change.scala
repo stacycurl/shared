@@ -1,32 +1,10 @@
 package sjc.shared
 
-import scalaz._
-
 
 object Change {
   def point[A](a: A): Change[A] = new Unchanged[A](a)
   def many[A](as: A*): List[Change[A]] = if (as.isEmpty) Nil else as.zip(as.tail).map(tuple).toList
   def tuple[A](beforeAfter: (A, A)): Change[A] = Change(beforeAfter._1, beforeAfter._2)
-
-  implicit object ChangeInstance extends Applicative[Change] with Unzip[Change] with Zip[Change] {
-    override def ap[A, B](ca: => Change[A])(cab: => Change[A => B]): Change[B] = {
-      val Change(beforeA,  afterA)  = ca
-      val Change(beforeAB, afterAB) = cab
-
-      Change[B](beforeAB(beforeA), afterAB(afterA))
-    }
-
-    def point[A](a: => A): Change[A] = Change(a, a)
-
-    def zip[A, B](ca: => Change[A], cb: => Change[B]): Change[(A, B)] = ca.zip(cb)
-
-    def unzip[A, B](cab: Change[(A, B)]): (Change[A], Change[B]) = (cab.map(_._1), cab.map(_._2))
-
-    override def map[A, B](ca: Change[A])(f: A => B): Change[B] = ca.map(f)
-  }
-
-  implicit def equalChange[A](implicit equal: Equal[A]): Equal[Change[A]] =
-    scalaz.std.tuple.tuple2Equal[A, A].contramap[Change[A]](_.tuple)
 
   implicit class ChangeOps[A](change: Change[A]) {
     def delta(implicit ev: A =:= Int): Int = change.after - change.before

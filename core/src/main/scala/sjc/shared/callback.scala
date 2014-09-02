@@ -1,14 +1,8 @@
 package sjc.shared
 
-import scalaz._
-
 
 object Callback {
   def apply[A](callback: Change[A] => Unit): Callback[A] = SingleCallback[A](callback)
-
-  implicit object CallbackContravariant extends Contravariant[Callback] {
-    def contramap[A, B](ca: Callback[A])(f: B => A): Callback[B] = ca.contramap(f)
-  }
 }
 
 trait Callback[A] extends (Change[A] => Change[A]) {

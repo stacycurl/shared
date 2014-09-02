@@ -1,7 +1,6 @@
 package sjc.shared
 
 import org.junit.Test
-import scalaz._
 
 import org.junit.Assert._
 
