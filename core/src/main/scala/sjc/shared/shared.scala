@@ -1,9 +1,10 @@
 package sjc.shared
 
+import scala.language.higherKinds
+
 import scala.annotation.tailrec
 import scala.collection.SeqLike
-import scala.collection.mutable.Builder
-import scala.collection.generic._
+import scala.collection.{mutable => M}
 
 
 object Shared {
@@ -17,20 +18,20 @@ object Shared {
     def /=(a: A)(implicit F: Fractional[A]) = sa.modify(F.div(_, a))
   }
 
-  implicit class SharedList[A](list: Shared[List[A]]) extends Builder[A, List[A]] {
+  implicit class SharedList[A](list: Shared[List[A]]) extends M.Builder[A, List[A]] {
     def +=(a: A): this.type = { list.modify(_ :+ a); this }
     def clear(): Unit       = list.value = Nil
     def result(): List[A]   = list.get()
     def drain(): List[A]    = { val result = this.result(); clear(); result }
   }
 
-  implicit class SharedMap[K, V](map: Shared[Map[K, V]]) extends Builder[(K, V), Map[K, V]] {
+  implicit class SharedMap[K, V](map: Shared[Map[K, V]]) extends M.Builder[(K, V), Map[K, V]] {
     def +=(kv: (K, V))      = { map.modify(_ + kv); this }
     def clear(): Unit       = map.value = Map.empty[K, V]
     def result(): Map[K, V] = map.get()
   }
 
-  implicit class SharedSeqLike[A, Repr, CC[A] <: SeqLike[A, CC[A]]](seqLike: Shared[CC[A]]) {
+  implicit class SharedSeqLike[A, Repr, CC[B] <: SeqLike[B, CC[B]]](seqLike: Shared[CC[A]]) {
     def sortBy[B: scala.Ordering](f: A => B): Shared[CC[A]] = seqLike.transform(_.sortBy(f))
     def sortWith(lt: (A, A) => Boolean): Shared[CC[A]] = seqLike.transform(_.sortWith(lt))
     def sorted[B >: A : scala.Ordering]: Shared[CC[A]] = seqLike.transform(_.sorted[B])

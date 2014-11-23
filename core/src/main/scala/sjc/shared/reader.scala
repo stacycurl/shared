@@ -1,5 +1,7 @@
 package sjc.shared
 
+import scala.language.implicitConversions
+
 
 object Reader {
   implicit def readerAsA[A](ra: Reader[A]): A = ra.get()

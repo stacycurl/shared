@@ -1,27 +1,26 @@
 package sjc.shared
 
 import org.junit.Test
-import org.scalacheck._
 
 import org.junit.Assert._
 
 
 class ChangesTests {
-  @Test def many {
+  @Test def many(): Unit = {
     assertEquals(Nil, Changes.many().get())
     assertEquals(Nil, Changes.many(1).get())
     assertEquals(List(Change(1, 2)), Changes.many(1, 2).get())
     assertEquals(List(Change(1, 2), Change(2, 3), Change(3, 4)), Changes.many(1, 2, 3, 4).get())
   }
 
-  @Test def values {
+  @Test def values(): Unit = {
     assertEquals(Nil, Changes.many().values())
     assertEquals(Nil, Changes.many(1).values())
     assertEquals(List(1, 2), Changes.many(1, 2).values())
     assertEquals(List(1, 2, 3), Changes.many(1, 2, 3).values())
   }
 
-  @Test def canMapOver {
+  @Test def canMapOver(): Unit = {
     val original = Changes.many(1, 2)
 
     assertEquals(List(Change("1", "2")),
@@ -31,7 +30,7 @@ class ChangesTests {
     assertEquals(Nil, original.get())
   }
 
-  @Test def canFlatMap {
+  @Test def canFlatMap(): Unit = {
     // Todo check functor laws
     val original = Changes.many(1, 2, 3)
 
@@ -42,7 +41,7 @@ class ChangesTests {
     assertEquals(Nil, original.get())
   }
 
-  @Test def canZip {
+  @Test def canZip(): Unit = {
     val (left, right) = (Changes.many(1, 2), Changes.many("one", "two"))
 
     assertEquals(List(Change((1, "one"), (2, "two"))), left.zip(right).get())
@@ -52,7 +51,7 @@ class ChangesTests {
     assertEquals(Nil, right.get())
   }
 
-  @Test def canFilter {
+  @Test def canFilter(): Unit = {
     assertEquals(Nil, Changes.many().get())
     assertEquals(Nil, Changes.many(1, 2).filter(_ => false).get())
     assertEquals(Nil, Changes.many(1, 2, 3).filter(_ => false).get())

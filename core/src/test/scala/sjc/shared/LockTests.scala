@@ -6,7 +6,7 @@ import org.junit.Assert._
 
 
 class LockTests {
-  @Test def tap {
+  @Test def tap(): Unit = {
     val events = Shared[List[LockEvent]](Nil)
     val tapped = Unlocked.tap(events += _)
 
@@ -17,7 +17,7 @@ class LockTests {
     assertEquals(List(LeavingWrite(Unlocked)), events.drain())
   }
 
-  @Test def zip {
+  @Test def zip(): Unit = {
     val (left, right) = {
       val (one, two) = (Synchronized("one"), ReadWriteLock())
 

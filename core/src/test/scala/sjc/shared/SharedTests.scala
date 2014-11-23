@@ -9,16 +9,16 @@ import org.junit.Assert._
 
 
 class SharedTests {
-  @Test def canGetInitialValue {
+  @Test def canGetInitialValue(): Unit = {
     assertEquals("initial", Shared("initial").get())
   }
 
-  @Test def modifyReturnsChange {
+  @Test def modifyReturnsChange(): Unit = {
     assertEquals(Change("initial", "initial >> modified"),
       Shared("initial").modify(_ ++ " >> modified"))
   }
 
-  @Test(timeout = 1000) def modifyIsThreadSafe {
+  @Test(timeout = 1000) def modifyIsThreadSafe(): Unit = {
     val shared = Shared("initial")
 
     val modifiers = Random.shuffle(
@@ -31,7 +31,7 @@ class SharedTests {
     assertEquals("<<<<<<<<<<initial>>>>>>>>>>", shared.get())
   }
 
-  @Test(timeout = 1000) def zippedLockIsThreadSafe {
+  @Test(timeout = 1000) def zippedLockIsThreadSafe(): Unit = {
     val (left, middle, right) = (Shared(0), Shared(0.0), Shared(""))
     val (lmr, rml) = (left.zip(middle).zip(right), right.zip(middle).zip(left))
 
@@ -47,7 +47,7 @@ class SharedTests {
     assertEquals(">>>>>>>>>>", right.get())
   }
 
-  @Test def canSet {
+  @Test def canSet(): Unit = {
     val shared = Shared(1)
     shared.value = 2
 
@@ -58,7 +58,7 @@ class SharedTests {
     assertEquals(3, shared.get())
   }
 
-  @Test def withValueTemporarilySetsValue {
+  @Test def withValueTemporarilySetsValue(): Unit = {
     val int = Shared(1)
 
     val result = int.withValue(2) {
@@ -69,7 +69,7 @@ class SharedTests {
     assertEquals(1, int.get())
   }
 
-  @Test def updateIsModifyWithActions {
+  @Test def updateIsModifyWithActions(): Unit = {
     val boolean = Shared(new AtomicInteger(1)) // perverse but just want an example
 
     boolean.update(_.incrementAndGet())
@@ -77,7 +77,7 @@ class SharedTests {
     assertEquals(2, boolean.get().get())
   }
 
-  @Test def canXmap {
+  @Test def canXmap(): Unit = {
     val string   = Shared("initial")
     val reversed = string.xmap[String](_.reverse, _.reverse)
 
@@ -89,7 +89,7 @@ class SharedTests {
     assertSame(string.lock, reversed.lock)
   }
 
-  @Test def canZip {
+  @Test def canZip(): Unit = {
     val string = Shared("one")
     val int    = Shared(1)
     val tuple  = string.zip(int)
@@ -102,7 +102,7 @@ class SharedTests {
     assertEquals(2,     int.get())
   }
 
-  @Test def canFilter {
+  @Test def canFilter(): Unit = {
     val int = Shared(1)
     val bigInt = int.filter(ci => math.abs(ci.delta) > 1)
     val bigIntChanges = bigInt.changes()
@@ -123,7 +123,7 @@ class SharedTests {
     assertSame(int.lock, bigInt.lock)
   }
 
-  @Test def sharedListBehavesLikeListBuffer {
+  @Test def sharedListBehavesLikeListBuffer(): Unit = {
     val list = Shared(List("initial"))
 
     list += "new"
@@ -141,7 +141,7 @@ class SharedTests {
     assertEquals(Nil, list.drain())
   }
 
-  @Test def sharedMapBehavesLikeMapBuilder {
+  @Test def sharedMapBehavesLikeMapBuilder(): Unit = {
     val map: Shared[Map[Int, String]] = Shared(Map(1 -> "one"))
 
     map += (2 -> "two")
@@ -153,7 +153,7 @@ class SharedTests {
     assertEquals(Map.empty[Int, String], map.result())
   }
 
-  @Test def sharedNumeric {
+  @Test def sharedNumeric(): Unit = {
     val si = Shared(1)
     val changes = si.changes()
 
@@ -164,7 +164,7 @@ class SharedTests {
     assertEquals(List(1, 2, 6, 5), changes.values())
   }
 
-  @Test def sharedFractional {
+  @Test def sharedFractional(): Unit = {
     val si = Shared(6.0)
 
     si /= 3.0
@@ -172,7 +172,7 @@ class SharedTests {
     assertEquals(2.0, si.get(), 1e-6)
   }
 
-  @Test def canGetSortedViewOfAnySeq {
+  @Test def canGetSortedViewOfAnySeq(): Unit = {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
 
@@ -180,7 +180,7 @@ class SharedTests {
     assertEquals(stack.get().sorted, stack.sorted.get())
   }
 
-  @Test def canGetSortByViewOfAnySeq {
+  @Test def canGetSortByViewOfAnySeq(): Unit = {
     val list  = Shared(List("aa", "bbb", "c"))
     val stack = Shared(Stack("aa", "bbb", "c"))
 
@@ -188,7 +188,7 @@ class SharedTests {
     assertEquals(stack.get().sortBy(_.length), stack.sortBy(_.length).get())
   }
 
-  @Test def canGetSortWithViewOfAnySeq {
+  @Test def canGetSortWithViewOfAnySeq(): Unit = {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
 
@@ -196,7 +196,7 @@ class SharedTests {
     assertEquals(stack.get().sortWith(_ > _), stack.sortWith(_ > _).get())
   }
 
-  @Test def canGetTransformedViewOfAnySeq {
+  @Test def canGetTransformedViewOfAnySeq(): Unit = {
     val list  = Shared(List(1, 3, 2))
     val stack = Shared(Stack(1, 3, 2))
     val paddedList  = list.transform(_.padTo(5, 0))
@@ -212,7 +212,7 @@ class SharedTests {
     assertEquals(Stack(4), stack.get())
   }
 
-  @Test def canAwaitForPredicate {
+  @Test def canAwaitForPredicate(): Unit = {
     val string = Shared("foo")
     assertEquals(Some("foo"), string.await(_ == "foo"))
 
@@ -236,13 +236,13 @@ class SharedTests {
     assertEquals(0, doneAwaiting.getCount())
   }
 
-  @Test def awaitCanTimeout {
+  @Test def awaitCanTimeout(): Unit = {
     val string = Shared("foo")
 
     assertEquals(None, string.await(_ == "bar", 1))
   }
 
-  @Test def canNotifyOnChange {
+  @Test def canNotifyOnChange(): Unit = {
     val int = Shared(1)
     val intChanges = int.changes()
 
@@ -253,7 +253,7 @@ class SharedTests {
     assertEquals(Change.many(1, 2), intChanges.get())
   }
 
-  @Test def canFilterChanges {
+  @Test def canFilterChanges(): Unit = {
     val int = Shared(1)
     val bigChanges = int.changes(ci => math.abs(ci.delta) > 1)
 
@@ -262,7 +262,7 @@ class SharedTests {
     assertEquals(Changes.many(1, 10, 7, 2).get(), bigChanges.get())
   }
 
-  @Test def xmappedSharedCanNotifyOnChange {
+  @Test def xmappedSharedCanNotifyOnChange(): Unit = {
     val int    = Shared(1)
     val double = int.xmap[Double](_.toDouble, _.toInt)
 
@@ -282,7 +282,7 @@ class SharedTests {
     assertEquals(Change.many(1.0, 2.0, 3.0), doubleChanges.get())
   }
 
-  @Test def zipSharedCanNotifyOnChange {
+  @Test def zipSharedCanNotifyOnChange(): Unit = {
     val int    = Shared(1)
     val string = Shared("one")
     val tuple  = int.zip(string)
@@ -308,7 +308,7 @@ class SharedTests {
     assertEquals(Change.many((1, "one"), (2, "one"), (2, "two"), (3, "three")), tupleChanges.get())
   }
 
-  @Test def canClearChanges {
+  @Test def canClearChanges(): Unit = {
     val int = Shared(1)
     val changes = int.changes()
 
@@ -321,7 +321,7 @@ class SharedTests {
     assertEquals(Nil, changes.get())
   }
 
-  @Test def threadLocalShared {
+  @Test def threadLocalShared(): Unit = {
     val shared = Shared.threadLocal("initial", new Synchronized)
     val changes = shared.changes()
     val results = Shared[Map[String, String]](Map.empty)

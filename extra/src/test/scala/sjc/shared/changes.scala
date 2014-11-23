@@ -1,26 +1,26 @@
 package sjc.shared
 
+import scala.language.implicitConversions
+
 import org.junit.Test
 import org.scalacheck._
-import scalaz.Equal
 
 import org.junit.Assert._
 import scalaz.scalacheck.ScalazProperties._
 import sjc.shared.ChangeSpec._
-import sjc.shared.Reader._
 import sjc.shared.instances.changes._
 import sjc.shared.instances.change._
 
 
 class ChangesTests {
-  @Test def canUnzip {
+  @Test def canUnzip(): Unit = {
     val (left, right) = ChangesInstance.unzip(Changes.many((1, "one"), (2, "two")))
 
     assertEquals(List(Change(1, 2)), left.get())
     assertEquals(List(Change("one", "two")), right.get())
   }
 
-  @Test def point {
+  @Test def point(): Unit = {
     assertEquals(List(Change.point(1)), ChangesInstance.point(1).get())
   }
 }

@@ -10,7 +10,7 @@ import sjc.shared.instances.modify._
 
 
 class ModifyTests {
-  @Test def modifyCanBeAppliedToAPartOfAnotherShared {
+  @Test def modifyCanBeAppliedToAPartOfAnotherShared(): Unit = {
     assertEquals(Change(("one", 1), ("one", 2)),
       Shared(("one", 1)).modify(Modify[Int](_ + 1).lens(second)))
   }

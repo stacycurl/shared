@@ -4,7 +4,6 @@ import org.scalacheck._
 import scalaz._
 
 import scalaz.scalacheck.ScalazProperties._
-import sjc.shared.ChangeSpec._
 import sjc.shared.instances.callback._
 import sjc.shared.instances.change._
 

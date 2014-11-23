@@ -1,5 +1,7 @@
 package sjc.shared
 
+import scala.language.{higherKinds, implicitConversions}
+
 import scalaz._
 
 

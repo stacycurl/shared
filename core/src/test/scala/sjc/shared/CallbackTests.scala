@@ -6,7 +6,7 @@ import org.junit.Assert._
 
 
 class CallbackTests {
-  @Test def canGuard {
+  @Test def canGuard(): Unit = {
     val intChanges = Shared[List[Change[Int]]](Nil)
 
     val allInts = Callback[Int](intChanges += _)
@@ -23,7 +23,7 @@ class CallbackTests {
     assertEquals(List(Change(1, 2)), intChanges.get())
   }
 
-  @Test def canFilter {
+  @Test def canFilter(): Unit = {
     val intChanges = Shared[List[Change[Int]]](Nil)
 
     val allInts = Callback[Int](intChanges += _)
@@ -39,7 +39,7 @@ class CallbackTests {
     assertEquals(List(Change(1, 2), Change(1, 3)), intChanges.get())
   }
 
-  @Test def canContramap {
+  @Test def canContramap(): Unit = {
     val ints = Shared[List[Change[Int]]](Nil)
     val intCallback = Callback[Int](ints += _)
     val stringCallback = intCallback.contramap[String](_.toInt)

@@ -1,8 +1,9 @@
 package sjc.shared
 
+import scala.language.implicitConversions
+
 import org.junit.Test
 import org.scalacheck._
-import scalaz._
 
 import org.junit.Assert._
 import scalaz.scalacheck.ScalazProperties._
@@ -10,7 +11,7 @@ import sjc.shared.instances.change._
 
 
 class ChangeTests {
-  @Test def canUnzip {
+  @Test def canUnzip(): Unit = {
     assertEquals((Change("one", "two"), Change(1, 2)),
       ChangeInstance.unzip(Change(("one", 1), ("two", 2))))
   }

@@ -22,7 +22,6 @@ abstract class BaseSpec(name: String) extends Properties(name) {
 
   protected class NamedFunction[A, B](name: String, f: A => B) extends (A => B) {
     def apply(a: A): B = f(a)
-    override def toString = name
+    override def toString() = name
   }
 }
-

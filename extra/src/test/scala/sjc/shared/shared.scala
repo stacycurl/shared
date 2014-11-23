@@ -11,13 +11,13 @@ import sjc.shared.Reader._
 
 
 class SharedTests {
-  @Test def canShow {
+  @Test def canShow(): Unit = {
     implicit val showInt: Show[Int] = Show.shows[Int](i => s"Int: $i")
 
     assertEquals("Int: 123", sharedShow[Int].shows(Shared(123)))
   }
 
-  @Test def canCreateLens {
+  @Test def canCreateLens(): Unit = {
     val tuple  = Shared(("one", 1))
     val string = tuple.lens(first)
     val int    = tuple.lens(second)
@@ -37,7 +37,7 @@ class SharedTests {
     assertSame(tuple.lock, int.lock)
   }
 
-  @Test def canUnzip {
+  @Test def canUnzip(): Unit = {
     val tuple = Shared(("one", 1))
     val (string, int) = SharedInstance.unzip(tuple)
 
@@ -50,7 +50,7 @@ class SharedTests {
     assertEquals(("two", 1), tuple.get())
   }
 
-  @Test def sharedSemigroup {
+  @Test def sharedSemigroup(): Unit = {
     val maxInt = Shared[Int](1)
     val changes = maxInt.changes()
 
@@ -63,7 +63,7 @@ class SharedTests {
     assertEquals(List(1, 2, 3, 3, 5, 6), changes.values())
   }
 
-  @Test def sharedMonoid {
+  @Test def sharedMonoid(): Unit = {
     implicit val minIntMonoid = Monoid.instance[Int]((l, r) => math.min(l, r), Int.MaxValue)
     val int = Shared(1)
 
@@ -72,7 +72,7 @@ class SharedTests {
     assertEquals(Int.MaxValue, int.get())
   }
 
-  @Test def lensSharedCanNotifyOnChange {
+  @Test def lensSharedCanNotifyOnChange(): Unit = {
     val tuple  = Shared(("one", 1))
     val string = tuple.lens(first)
 
