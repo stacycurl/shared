@@ -40,14 +40,14 @@ object Shared {
 
 trait Shared[A] extends Reader[A] {
   def await(p: A => Boolean, timeoutMillis: Long = 0): Option[A] = {
-    val (start, minSleep) = (System.currentTimeMillis(), 100)
+    val (start, maxSleep) = (System.currentTimeMillis(), 100)
 
     @tailrec def recurse(value: A): Option[A] = {
       val remainingTime =
-        if (timeoutMillis == 0) minSleep else timeoutMillis - (System.currentTimeMillis() - start)
+        if (timeoutMillis == 0) maxSleep else timeoutMillis - (System.currentTimeMillis() - start)
 
       if (p(value)) Some(value) else if (remainingTime <= 0) None else {
-        Thread.sleep(math.min(minSleep, remainingTime))
+        Thread.sleep(math.min(maxSleep, remainingTime))
         recurse(get())
       }
     }
@@ -90,26 +90,31 @@ trait Shared[A] extends Reader[A] {
   def lock: Lock
 }
 
-case class LockShared[A](initial: A, lock: Lock) extends Shared[A] {
-  def get(): A = lock.withRead(current)
+trait Dunno[A] extends Shared[A] {
+  def get(): A = lock.withRead(unsafeGet())
   def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
 
   def alter(f: A => Change[A]): Change[A] =
-    callbacks.apply(lock.withWrite(f(value).perform(change => current = change.after)))
+    callbacks.apply(f(get()).perform(change ⇒ lock.withWrite(unsafeSet(change.after))))
 
-  private var current = initial
+  private[shared] def unsafeGet(): A
+  private[shared] def unsafeSet(newValue: A): Unit
+
   private val callbacks: Callbacks[A] = new Callbacks[A]
 }
 
-case class ThreadLocalShared[A](initial: A, lock: Lock = Unlocked) extends Shared[A] {
-  def get(): A = dynamic.value
-  def onChange(callback: Callback[A]): this.type = {callbacks += callback; this}
+case class LockShared[A](initial: A, lock: Lock) extends Dunno[A] {
+  private[shared] def unsafeGet(): A = current
+  private[shared] def unsafeSet(newValue: A): Unit = current = newValue
 
-  def alter(f: A => Change[A]): Change[A] =
-    callbacks.apply(lock.withWrite(f(value).perform(change => dynamic.value = change.after)))
+  private var current = initial
+}
+
+case class ThreadLocalShared[A](initial: A, lock: Lock = Unlocked) extends Dunno[A] {
+  private[shared] def unsafeGet(): A = dynamic.value
+  private[shared] def unsafeSet(newValue: A): Unit = dynamic.value = newValue
 
   private val dynamic = new scala.util.DynamicVariable[A](initial)
-  private val callbacks: Callbacks[A] = new Callbacks[A]
 }
 
 case class XMapShared[A, B](sa: Shared[A], aToB: A => B, bToA: B => A) extends Shared[B] {
@@ -127,7 +132,7 @@ case class FilteredShared[A](sa: Shared[A], p: Change[A] => Boolean) extends Sha
 }
 
 case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B)] {
-  def get(): (A, B) = (sa.get(), sb.get())
+  def get(): (A, B) = lock.withRead((sa.get(), sb.get()))
 
   def onChange(callbackAB: Callback[(A, B)]): this.type = {
     callbacks += callbackAB
@@ -138,7 +143,7 @@ case class ZippedShared[A, B](sa: Shared[A], sb: Shared[B]) extends Shared[(A, B
   }
 
   def alter(f: ((A, B)) => Change[(A, B)]): Change[(A, B)] = callbacks.apply(lock.withWrite {
-    f((sa.get(), sb.get())).perform(change => allowCallback.withValue(false) {
+    f(get()).perform(change => allowCallback.withValue(false) {
       sa.value = change.after._1; sb.value = change.after._2
     })
   })
